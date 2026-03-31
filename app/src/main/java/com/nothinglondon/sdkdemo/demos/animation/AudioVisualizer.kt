@@ -64,6 +64,10 @@ class AudioVisualizer: IFrameProvider {
         return AUDIO_VISUALIZER_ANIMATION_SPEED
     }
 
+    override fun canPlay(): Boolean {
+        return spectrumBands.max() > 0.1
+    }
+
     private fun initializeVisualizer() {
         try {
             // Release any previous instance first

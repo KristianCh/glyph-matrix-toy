@@ -5,4 +5,5 @@ interface IFrameProvider {
     fun dispose()
     fun getFrameData(modifier: IntArray?): IntArray
     fun getFrameTime(): Long
+    fun canPlay(): Boolean
 }
