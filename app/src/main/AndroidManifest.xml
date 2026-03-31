@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
-
     <!-- This permission is required to be able access the Glyph Matrix -->
     <uses-permission android:name="com.nothing.ketchum.permission.ENABLE" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
 
     <application
         android:allowBackup="true"
@@ -14,7 +15,6 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.NothingAndroidSDKDemo">
-
         <!-- Nothing API Key -->
         <meta-data
             android:name="NothingKey"
@@ -29,32 +29,7 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
-
-        <!-- Basic Demo Service -->
-        <service
-            android:name=".demos.basic.BasicDemoService"
-            android:exported="true"
-            tools:ignore="ExportedService">
-            <intent-filter>
-                <action android:name="com.nothing.glyph.TOY" />
-            </intent-filter>
-
-            <meta-data
-                android:name="com.nothing.glyph.toy.name"
-                android:resource="@string/toy_name_basic" />
-            <meta-data
-                android:name="com.nothing.glyph.toy.image"
-                android:resource="@drawable/basic_thumbnail" />
-            <meta-data
-                android:name="com.nothing.glyph.toy.summary"
-                android:resource="@string/toy_summary_basic" />
-            <meta-data
-                android:name="com.nothing.glyph.toy.longpress"
-                android:value="1" />
-        </service>
-
-        <!-- Animation Demo Service -->
+        </activity> <!-- Animation Demo Service -->
         <service
             android:name=".demos.animation.AnimationDemoService"
             android:exported="true"
@@ -73,33 +48,24 @@
                 android:name="com.nothing.glyph.toy.summary"
                 android:resource="@string/toy_summary_animation" />
             <meta-data
-                android:name="com.nothing.glyph.toy.longpress"
+                android:name="com.nothing.glyph.toy.aod_support"
                 android:value="1" />
         </service>
-
-        <!-- Glyph Button Demo Service -->
         <service
-            android:name=".demos.glyphbutton.GlyphButtonDemoService"
-            android:exported="true"
-            tools:ignore="ExportedService">
+            android:name=".demos.animation.NotificationListener"
+            android:exported="false"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
             <intent-filter>
-                <action android:name="com.nothing.glyph.TOY" />
+                <action android:name="android.service.notification.NotificationListenerService" />
             </intent-filter>
 
             <meta-data
-                android:name="com.nothing.glyph.toy.name"
-                android:resource="@string/toy_name_glyph_button" />
+                android:name="android.service.notification.default_filter_types"
+                android:value="conversations|alerting"></meta-data>
             <meta-data
-                android:name="com.nothing.glyph.toy.image"
-                android:resource="@drawable/glyphbutton_numbnail" />
-            <meta-data
-                android:name="com.nothing.glyph.toy.summary"
-                android:resource="@string/toy_summary_glyph_button" />
-            <meta-data
-                android:name="com.nothing.glyph.toy.longpress"
-                android:value="1" />
+                android:name="android.service.notification.disabled_filter_types"
+                android:value="ongoing|silent"></meta-data>
         </service>
-
     </application>
 
 </manifest>
