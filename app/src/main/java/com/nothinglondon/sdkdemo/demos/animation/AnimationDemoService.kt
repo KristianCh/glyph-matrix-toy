@@ -16,6 +16,11 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 class AnimationDemoService : GlyphMatrixService("Animation-Demo") {
+    private companion object {
+        private const val SETTINGS_PREFERENCES_NAME = "SettingsPreferences"
+        private const val AUDIO_VISUALIZER_ENABLED_SETTING_KEY = "AudioVisualizerEnabled"
+        private const val AUDIO_COOLDOWN_TIME = 2000
+    }
 
     private val backgroundScope = CoroutineScope(Dispatchers.IO)
     private val uiScope = CoroutineScope(Dispatchers.Main)
@@ -24,7 +29,7 @@ class AnimationDemoService : GlyphMatrixService("Animation-Demo") {
     // Enhanced audio detection with Visualizer API
     private val audioVisualizer: AudioVisualizer = AudioVisualizer()
     private val clockProvider: ClockProvider = ClockProvider()
-    private var lastUpdateTime: Long = System.currentTimeMillis()
+    private var lastAudioTime: Long = System.currentTimeMillis()
 
     private lateinit var mService: NotificationListener
     private var mNLSBound: Boolean = false
@@ -65,6 +70,7 @@ class AnimationDemoService : GlyphMatrixService("Animation-Demo") {
     ) {
         audioVisualizer.initialize()
         clockProvider.initialize()
+        lastAudioTime = System.currentTimeMillis() - AUDIO_COOLDOWN_TIME
 
         sharedPreferences = getSharedPreferences(SETTINGS_PREFERENCES_NAME, MODE_PRIVATE)
 
@@ -74,24 +80,25 @@ class AnimationDemoService : GlyphMatrixService("Animation-Demo") {
 
         backgroundScope.launch {
             while (isActive) {
-                var frameData = clockProvider.getFrameData(null).build(applicationContext).render()
+                var currentFrameProvider: IFrameProvider = clockProvider
 
                 val audioVisualizerEnabled = sharedPreferences.getBoolean(AUDIO_VISUALIZER_ENABLED_SETTING_KEY, true)
                 val audioPresent = audioVisualizer.canPlay()
                 val currentTimeMillis = System.currentTimeMillis()
-                val showVisualizer = audioVisualizerEnabled && (audioPresent || currentTimeMillis - lastUpdateTime < 2000)
+                val showVisualizer = audioVisualizerEnabled && (audioPresent || currentTimeMillis - lastAudioTime < AUDIO_COOLDOWN_TIME)
                 if (showVisualizer) {
                     if (audioPresent)
-                        lastUpdateTime = currentTimeMillis
-                    frameData = audioVisualizer.getFrameData(null).build(applicationContext).render()
+                        lastAudioTime = currentTimeMillis
+                    currentFrameProvider = audioVisualizer
                 }
 
+                val frameData = currentFrameProvider.getFrameData(null).build(applicationContext).render()
                 uiScope.launch {
                     glyphMatrixManager.setMatrixFrame(frameData)
                 }
 
                 // wait a bit
-                delay((if (showVisualizer) audioVisualizer.getFrameTime() else clockProvider.getFrameTime()))
+                delay(currentFrameProvider.getFrameTime())
             }
         }
     }
@@ -102,10 +109,5 @@ class AnimationDemoService : GlyphMatrixService("Animation-Demo") {
         try {
             unbindService(connection)
         } catch (e: Exception) { }
-    }
-
-    private companion object {
-        private const val SETTINGS_PREFERENCES_NAME = "SettingsPreferences"
-        private const val AUDIO_VISUALIZER_ENABLED_SETTING_KEY = "AudioVisualizerEnabled"
     }
 }

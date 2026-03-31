@@ -4,6 +4,7 @@ import android.media.audiofx.Visualizer
 import android.util.Log
 import com.nothing.ketchum.GlyphMatrixFrame
 import com.nothinglondon.sdkdemo.demos.animation.GlyphMatrixUtils.HEIGHT
+import com.nothinglondon.sdkdemo.demos.animation.GlyphMatrixUtils.MAX_BRIGHTNESS
 import com.nothinglondon.sdkdemo.demos.animation.GlyphMatrixUtils.WIDTH
 import java.lang.Math.clamp
 import kotlin.math.exp
@@ -16,14 +17,17 @@ class AudioVisualizer: IFrameProvider {
     private companion object {
         private const val AUDIO_VISUALIZER_ANIMATION_SPEED: Long = 33
         private const val AUDIO_BANDS = 13
+        private const val AUDIO_PRESENT_THRESHOLD = 50
+        private const val AUDIO_VISUALIZE_THRESHOLD = 90
     }
 
     private var visualizer: Visualizer? = null
     private var isVisualizerEnabled = false
     private var lastFft: ByteArray? = null
 
-    // 25-band spectrum from FFT (one per grid column), smoothed
+    // 13-band spectrum from FFT (one per grid column), smoothed
     private val spectrumBands = FloatArray(AUDIO_BANDS) { 0f }
+    private var audioPresent = false
 
     override fun initialize() {
         initializeVisualizer()
@@ -54,7 +58,7 @@ class AudioVisualizer: IFrameProvider {
             }
             grid[6 * WIDTH + i] = 255
             for (j in 0..< range) {
-                val op = (if (j == range - 1) lastOpacity else 1.0) * 4096.0
+                val op = (if (j == range - 1) lastOpacity else 1.0) * MAX_BRIGHTNESS
                 grid[(6+j) * WIDTH + i] = op.toInt()
                 grid[(6-j) * WIDTH + i] = op.toInt()
             }
@@ -70,7 +74,7 @@ class AudioVisualizer: IFrameProvider {
     }
 
     override fun canPlay(): Boolean {
-        return spectrumBands.max() > 0.1
+        return audioPresent
     }
 
     private fun initializeVisualizer() {
@@ -126,7 +130,7 @@ class AudioVisualizer: IFrameProvider {
     }
 
     /**
-     * Process FFT data for frequency band analysis and 25-band spectrum.
+     * Process FFT data for frequency band analysis and 13-band spectrum.
      */
     private fun processFftData(fft: ByteArray) {
         val numBins = fft.size / 2  // Number of frequency bins (real/imaginary pairs)
@@ -142,7 +146,8 @@ class AudioVisualizer: IFrameProvider {
             if (magnitudes[i] > maxMag) maxMag = magnitudes[i]
         }
 
-        if (maxMag < 70) {
+        audioPresent = maxMag > AUDIO_PRESENT_THRESHOLD
+        if (maxMag < AUDIO_VISUALIZE_THRESHOLD) {
 
             for (band in 0 until AUDIO_BANDS) {
                 spectrumBands[band] = spectrumBands[band] * 0.75f

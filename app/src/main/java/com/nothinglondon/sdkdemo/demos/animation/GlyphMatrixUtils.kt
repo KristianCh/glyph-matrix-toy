@@ -12,6 +12,7 @@ object GlyphMatrixUtils {
     const val TOP_LINE = 0
     const val BOTTOM_LINE = 6
     const val CHARACTER_SEPARATOR_WIDTH = 2
+    const val MAX_BRIGHTNESS = 4096
 
     fun getTextLength(string: String): Int {
         var l = 0
