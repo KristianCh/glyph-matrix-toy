@@ -2,6 +2,9 @@ package com.nothinglondon.sdkdemo.demos.animation
 
 import android.media.audiofx.Visualizer
 import android.util.Log
+import com.nothing.ketchum.GlyphMatrixFrame
+import com.nothinglondon.sdkdemo.demos.animation.GlyphMatrixUtils.HEIGHT
+import com.nothinglondon.sdkdemo.demos.animation.GlyphMatrixUtils.WIDTH
 import java.lang.Math.clamp
 import kotlin.math.exp
 import kotlin.math.ln
@@ -11,11 +14,10 @@ import kotlin.math.sqrt
 
 class AudioVisualizer: IFrameProvider {
     private companion object {
-        private const val WIDTH = 13
-        private const val HEIGHT = 13
         private const val AUDIO_VISUALIZER_ANIMATION_SPEED: Long = 33
         private const val AUDIO_BANDS = 13
     }
+
     private var visualizer: Visualizer? = null
     private var isVisualizerEnabled = false
     private var lastFft: ByteArray? = null
@@ -40,7 +42,7 @@ class AudioVisualizer: IFrameProvider {
         }
     }
 
-    override fun getFrameData(modifier: IntArray?): IntArray {
+    override fun getFrameData(modifier: IntArray?): GlyphMatrixFrame.Builder {
         val grid = Array(HEIGHT * WIDTH) { 0 }
 
         for (i in 0..<WIDTH) {
@@ -57,7 +59,10 @@ class AudioVisualizer: IFrameProvider {
                 grid[(6-j) * WIDTH + i] = op.toInt()
             }
         }
-        return grid.toIntArray()
+
+        val frameData = GlyphMatrixFrame.Builder()
+            .addTop(grid.toIntArray())
+        return frameData
     }
 
     override fun getFrameTime(): Long {
