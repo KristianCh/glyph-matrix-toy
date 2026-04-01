@@ -1,5 +1,7 @@
 package com.nothinglondon.sdkdemo.demos.animation
 
+import java.time.LocalDateTime
+
 object GlyphMatrixUtils {
     const val WIDTH = 13
     const val HEIGHT = 13
@@ -8,12 +10,14 @@ object GlyphMatrixUtils {
 
     const val CHARACTER_WIDTH = 4
     const val TOP_LINE = 0
+    const val MID_LINE = 3
     const val BOTTOM_LINE = 6
     const val CHARACTER_SEPARATOR_WIDTH = 2
     const val MAX_BRIGHTNESS = 4096
     private val I = 255
+    private val J = I * 6
 
-    val notificationFrame = arrayOf(
+    private val notificationFrame = arrayOf(
         0, 0, 0, 0, I, I, I, I, I, 0, 0, 0, 0,
         0, 0, I, I, 0, 0, 0, 0, 0, I, I, 0, 0,
         0, I, 0, 0, 0, 0, 0, 0, 0, 0, 0, I, 0,
@@ -28,6 +32,43 @@ object GlyphMatrixUtils {
         0, 0, I, I, 0, 0, 0, 0, 0, I, I, 0, 0,
         0, 0, 0, 0, I, I, I, I, I, 0, 0, 0, 0,
     ).toIntArray()
+
+    val notificationFrame2 = arrayOf(
+        0, 0, 0, 0, J, I, I, I, J, 0, 0, 0, 0,
+        0, 0, J, I, 0, 0, 0, 0, 0, I, J, 0, 0,
+        0, J, 0, 0, 0, 0, 0, 0, 0, 0, 0, J, 0,
+        0, I, 0, 0, 0, 0, 0, 0, 0, 0, 0, I, 0,
+        J, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, J,
+        I, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, I,
+        I, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, I,
+        I, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, I,
+        J, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, J,
+        0, I, 0, 0, 0, 0, 0, 0, 0, 0, 0, I, 0,
+        0, J, 0, 0, 0, 0, 0, 0, 0, 0, 0, J, 0,
+        0, 0, J, I, 0, 0, 0, 0, 0, I, J, 0, 0,
+        0, 0, 0, 0, J, I, I, I, J, 0, 0, 0, 0,
+    ).toIntArray()
+
+    val crossFrame = arrayOf(
+        J, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, J,
+        0, J, 0, 0, 0, 0, 0, 0, 0, 0, 0, J, 0,
+        0, 0, J, 0, 0, 0, 0, 0, 0, 0, J, 0, 0,
+        0, 0, 0, J, 0, 0, 0, 0, 0, J, 0, 0, 0,
+        0, 0, 0, 0, J, 0, 0, 0, J, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, J, 0, J, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, J, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, J, 0, J, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, J, 0, 0, 0, J, 0, 0, 0, 0,
+        0, 0, 0, J, 0, 0, 0, 0, 0, J, 0, 0, 0,
+        0, 0, J, 0, 0, 0, 0, 0, 0, 0, J, 0, 0,
+        0, J, 0, 0, 0, 0, 0, 0, 0, 0, 0, J, 0,
+        J, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, J,
+    ).toIntArray()
+
+    fun getNotificationFrame(): IntArray {
+        val second = LocalDateTime.now().second
+        return if (second % 2 != 0) notificationFrame else notificationFrame2
+    }
 
     fun applyModifierToArray(array: IntArray, modifier: IntArray?, mode: ArrayModifierApplyMode): IntArray {
         if (modifier == null || array.size != modifier.size) return array

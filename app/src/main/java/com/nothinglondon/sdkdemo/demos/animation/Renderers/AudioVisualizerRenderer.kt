@@ -3,22 +3,27 @@ package com.nothinglondon.sdkdemo.demos.animation.Renderers
 import android.content.Context
 import android.media.audiofx.Visualizer
 import android.util.Log
+import androidx.core.math.MathUtils.clamp
 import com.nothing.ketchum.GlyphMatrixFrame
+import com.nothinglondon.sdkdemo.demos.animation.AnimationDemoService
 import com.nothinglondon.sdkdemo.demos.animation.ArrayModifierApplyMode
+import com.nothinglondon.sdkdemo.demos.animation.AudioVisualizerRotationType
 import com.nothinglondon.sdkdemo.demos.animation.GlyphMatrixUtils.HEIGHT
 import com.nothinglondon.sdkdemo.demos.animation.GlyphMatrixUtils.MAX_BRIGHTNESS
 import com.nothinglondon.sdkdemo.demos.animation.GlyphMatrixUtils.WIDTH
 import com.nothinglondon.sdkdemo.demos.animation.GlyphMatrixUtils.applyModifierToArray
-import java.lang.Math.clamp
+import com.nothinglondon.sdkdemo.demos.animation.Orientation
+import java.lang.Math.toRadians
+import kotlin.math.cos
 import kotlin.math.exp
 import kotlin.math.ln
 import kotlin.math.min
 import kotlin.math.roundToInt
+import kotlin.math.sin
 import kotlin.math.sqrt
 
 class AudioVisualizerRenderer: IFrameRenderer {
     private companion object {
-        private const val AUDIO_VISUALIZER_ANIMATION_SPEED: Long = 33
         private const val AUDIO_BANDS = 13
         private const val AUDIO_PRESENT_THRESHOLD = 50
         private const val AUDIO_VISUALIZE_THRESHOLD = 90
@@ -31,6 +36,7 @@ class AudioVisualizerRenderer: IFrameRenderer {
     // 13-band spectrum from FFT (one per grid column), smoothed
     private val spectrumBands = FloatArray(AUDIO_BANDS) { 0f }
     private var audioPresent = false
+    private var captureRate = 100
 
     override fun initialize(context: Context) {
         initializeVisualizer()
@@ -59,26 +65,59 @@ class AudioVisualizerRenderer: IFrameRenderer {
             if (range < targetHeight && range < 6) {
                 range++
             }
-            grid[6 * WIDTH + i] = 255
+            grid[getPixelCoord(i)] = 255
             for (j in 0..< range) {
                 val op = (if (j == range - 1) lastOpacity else 1.0) * MAX_BRIGHTNESS
-                grid[(6+j) * WIDTH + i] = op.toInt()
-                grid[(6-j) * WIDTH + i] = op.toInt()
+                grid[getPixelCoord(i, j)] = op.toInt()
+                grid[getPixelCoord(i, -j)] = op.toInt()
             }
         }
 
-
         val frameData = GlyphMatrixFrame.Builder()
-            .addTop(applyModifierToArray(grid.toIntArray(), modifier, ArrayModifierApplyMode.ADD))
+            .addLow(applyModifierToArray(grid.toIntArray(), modifier, ArrayModifierApplyMode.ADD))
         return frameData
     }
 
+    fun setEnabled(audioVisualizerEnabled: Boolean) {
+        visualizer?.setEnabled(audioVisualizerEnabled)
+    }
+
+    private fun getPixelCoord(band: Int, offset: Int = 0): Int {
+
+        if (AnimationDemoService.audioVisualizerRotationType == AudioVisualizerRotationType.Axis) {
+            return when (AnimationDemoService.currentRotation.value) {
+                Orientation.LANDSCAPE_LEFT -> (WIDTH - band - 1) * HEIGHT + (HEIGHT - 6 - offset - 1)
+                Orientation.PORTRAIT_DOWN -> (6 + offset) * WIDTH + (WIDTH - band - 1)
+                Orientation.LANDSCAPE_RIGHT -> band * HEIGHT + 6 + offset
+                else -> (6 + offset) * WIDTH + band
+            }
+        }
+        else if (AnimationDemoService.audioVisualizerRotationType == AudioVisualizerRotationType.Full) {
+            var x = band
+            var y = 6 + offset
+            // Translate by center to origin
+            x -= 6
+            y -= 6
+            // Rotate around origin
+            val angle = toRadians(AnimationDemoService.currentAngle.value.toDouble())
+            var x_rot = x * cos(angle) - y * sin(angle)
+            var y_rot = y * cos(angle) + x * sin(angle)
+            // Translate back from origin
+            x_rot += 6
+            val x_fin = clamp(x_rot.roundToInt(), 0, 12)
+            val y_fin = clamp(y_rot.roundToInt(), -6, 6)
+
+            return (6 + y_fin) * WIDTH + x_fin
+        }
+        return (6 + offset) * WIDTH + band
+    }
+
     override fun getFrameTime(): Long {
-        return AUDIO_VISUALIZER_ANIMATION_SPEED
+        return captureRate.toLong()
     }
 
     override fun canPlay(): Boolean {
-        return audioPresent
+        return audioPresent && visualizer?.enabled == true
     }
 
     private fun initializeVisualizer() {
@@ -87,16 +126,17 @@ class AudioVisualizerRenderer: IFrameRenderer {
             visualizer?.apply {
                 try {
                     enabled = false
-                } catch (_: Exception) {
                 }
+                catch (_: Exception) { }
                 try {
                     release()
-                } catch (_: Exception) {
                 }
+                catch (_: Exception) { }
             }
             visualizer = null
             isVisualizerEnabled = false
 
+            captureRate = Visualizer.getMaxCaptureRate() / 2 / 100
             if (Visualizer.getMaxCaptureRate() > 0) {
                 val vis = Visualizer(0)
                 // Must disable before configuring capture size
@@ -126,6 +166,7 @@ class AudioVisualizerRenderer: IFrameRenderer {
                 visualizer = vis
                 isVisualizerEnabled = true
                 Log.i("Visualizer", "Visualizer initialized successfully")
+                Log.i("Visualizer", (captureRate).toString())
             }
         } catch (e: Exception) {
             Log.w("Visualizer", "Failed to initialize Visualizer: ${e.message}")

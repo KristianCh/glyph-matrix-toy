@@ -7,10 +7,12 @@ import com.nothinglondon.sdkdemo.demos.animation.GlyphMatrixUtils.HEIGHT
 import com.nothinglondon.sdkdemo.demos.animation.GlyphMatrixUtils.MAX_BRIGHTNESS
 import com.nothinglondon.sdkdemo.demos.animation.GlyphMatrixUtils.WIDTH
 import com.nothinglondon.sdkdemo.demos.animation.GlyphMatrixUtils.applyModifierToArray
+import com.nothinglondon.sdkdemo.demos.animation.GlyphMatrixUtils.crossFrame
 import kotlin.random.Random
 
 class GameOfLiveRenderer: IFrameRenderer {
-    val cells = BooleanArray(WIDTH * HEIGHT) { false }
+    var cells = BooleanArray(WIDTH * HEIGHT) { false }
+    val cellsNext = BooleanArray(WIDTH * HEIGHT) { false }
     val cellsDisplay = IntArray(WIDTH * HEIGHT) { 0 }
     var noChangeFrames = 0
 
@@ -40,22 +42,23 @@ class GameOfLiveRenderer: IFrameRenderer {
                         sum += if (getCell(x, y)) 1 else 0
                     }
                 }
-                val neighbours = sum
+                val current = getCell(j, i)
                 if (getCell(j, i)) {
-                    if (neighbours < 2) {
-                        setCell(j, i, false)
+                    if (sum < 2 || sum > 3) {
+                        setCell(cellsNext, j, i, false)
                         noChangeFrames = 0
                     }
-                    if (neighbours > 3) {
-                        setCell(j, i, false)
-                        noChangeFrames = 0
+                    else {
+                        setCell(cellsNext, j, i, current)
                     }
-                } else if (neighbours == 3) {
-                    setCell(j, i, true)
+                }
+                else if (sum == 3) {
+                    setCell(cellsNext, j, i, true)
                     noChangeFrames = 0
                 }
             }
         }
+        cells = cellsNext.clone()
         val frameData = GlyphMatrixFrame.Builder()
 
         if (noChangeFrames <= 10) {
@@ -64,8 +67,10 @@ class GameOfLiveRenderer: IFrameRenderer {
                     cellsDisplay[j * WIDTH + i] = if (cells[j * WIDTH + i]) MAX_BRIGHTNESS else 0
                 }
             }
-
             frameData.addTop(applyModifierToArray(cellsDisplay, modifier, ArrayModifierApplyMode.ADD))
+        }
+        else {
+            frameData.addTop(applyModifierToArray(crossFrame, modifier, ArrayModifierApplyMode.ADD))
         }
 
         return frameData
@@ -83,7 +88,7 @@ class GameOfLiveRenderer: IFrameRenderer {
         noChangeFrames = 0
         for (i in 0 ..< HEIGHT) {
             for (j in 0 ..< WIDTH) {
-                setCell(j, i, Random.nextBoolean() && Random.nextBoolean())
+                setCell(cells, j, i, Random.nextBoolean())
             }
         }
     }
@@ -92,8 +97,8 @@ class GameOfLiveRenderer: IFrameRenderer {
         return true
     }
 
-    private fun setCell(x: Int, y: Int, value: Boolean) {
-        cells[y * WIDTH + x] = value
+    private fun setCell(c: BooleanArray, x: Int, y: Int, value: Boolean) {
+        c[y * WIDTH + x] = value
     }
 
     private fun getCell(x: Int, y: Int): Boolean {

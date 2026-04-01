@@ -11,9 +11,9 @@
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@drawable/animation_thumbnail"
         android:label="@string/app_name"
-        android:roundIcon="@mipmap/ic_launcher_round"
+        android:roundIcon="@drawable/animation_thumbnail"
         android:supportsRtl="true"
         android:theme="@style/Theme.NothingAndroidSDKDemo">
         <!-- Nothing API Key -->
@@ -24,13 +24,16 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:theme="@style/Theme.NothingAndroidSDKDemo">
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.NothingAndroidSDKDemo"
+            tools:ignore="DiscouragedApi,LockedOrientationActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity> <!-- Animation Demo Service -->
+
         <service
             android:name=".demos.animation.AnimationDemoService"
             android:exported="true"
@@ -52,21 +55,25 @@
                 android:name="com.nothing.glyph.toy.aod_support"
                 android:value="1" />
         </service>
+
         <service
             android:name=".demos.animation.NotificationListener"
             android:exported="false"
             android:label="Notification Listener"
             android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
-            <intent-filter>
-                <action android:name="android.service.notification.NotificationListenerService" />
-            </intent-filter>
 
             <meta-data
                 android:name="android.service.notification.default_filter_types"
-                android:value="conversations|alerting"></meta-data>
+                android:value="conversations|alerting|ongoing">
+            </meta-data>
             <meta-data
                 android:name="android.service.notification.disabled_filter_types"
-                android:value="ongoing|silent"></meta-data>
+                android:value="silent">
+            </meta-data>
+
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
         </service>
     </application>
 

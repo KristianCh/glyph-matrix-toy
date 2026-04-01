@@ -1,10 +1,15 @@
 package com.nothinglondon.sdkdemo
 
+import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
+import android.content.pm.PackageManager
 import android.os.Bundle
+import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,10 +18,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import android.Manifest
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
@@ -32,12 +38,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import com.nothinglondon.sdkdemo.demos.animation.NotificationItem
 import com.nothinglondon.sdkdemo.demos.animation.NotificationListener
 import com.nothinglondon.sdkdemo.demos.animation.SettingsConstants.AUDIO_VISUALIZER_ENABLED_SETTING_KEY
+import com.nothinglondon.sdkdemo.demos.animation.SettingsConstants.AUDIO_VISUALIZER_ROTATION_SETTING_KEY
 import com.nothinglondon.sdkdemo.demos.animation.SettingsConstants.PRIMARY_TOY_SETTING_KEY
 import com.nothinglondon.sdkdemo.demos.animation.SettingsConstants.SETTINGS_PREFERENCES_NAME
+import com.nothinglondon.sdkdemo.demos.animation.SettingsConstants.SHOW_NOTIFICATION_RING_SETTING_KEY
 import com.nothinglondon.sdkdemo.ui.theme.NothingAndroidSDKDemoTheme
 
 class MainActivity : ComponentActivity() {
@@ -47,8 +57,67 @@ class MainActivity : ComponentActivity() {
         super.onStart()
     }
 
+    fun isNotificationServiceEnabled(context: Context): Boolean {
+        val packageName = context.packageName
+        val flat = Settings.Secure.getString(
+            context.contentResolver,
+            "enabled_notification_listeners"
+        ) ?: return false
+
+        return flat.split(":").any { it.contains(packageName) }
+    }
+
+    fun hasAudioPermission(context: Context): Boolean {
+        return ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.RECORD_AUDIO
+        ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    fun requestNotificationAccess(context: Context) {
+        val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        context.startActivity(intent)
+    }
+
+    private val requestAudioPermission = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            startService(Intent(this, MainActivity::class.java))
+        } else {
+            // Show explanation to user
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        if (!isNotificationServiceEnabled(this)) {
+            requestNotificationAccess(this)
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        if (!isNotificationServiceEnabled(this)) {
+            requestNotificationAccess(this)
+        }
+
+        when {
+            !hasAudioPermission(this) -> {
+                requestAudioPermission.launch(Manifest.permission.RECORD_AUDIO)
+            }
+
+            !isNotificationServiceEnabled(this) -> {
+                requestNotificationAccess(this)
+            }
+
+            else -> {
+                startService(Intent(this, MainActivity::class.java))
+            }
+        }
 
         sharedPreferences = getSharedPreferences(SETTINGS_PREFERENCES_NAME, MODE_PRIVATE)
 
@@ -56,27 +125,60 @@ class MainActivity : ComponentActivity() {
         setContent {
             NothingAndroidSDKDemoTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    val notifications by NotificationListener.notifications.collectAsState()
-                    Column() {
-                        Text(
-                            text = "Settings",
-                            modifier = Modifier.padding(innerPadding),
-                            style = MaterialTheme.typography.titleLarge,
-                        )
-                        Text("Primary Toy")
+                    val scrollState = rememberScrollState()
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(innerPadding)
+                            .verticalScroll(rememberScrollState())
+                    ) {
+                    Text(
+                        text = "Settings",
+                        modifier = Modifier.padding(innerPadding),
+                        style = MaterialTheme.typography.titleLarge,
+                    )
+                        Text("Primary Toy", style = MaterialTheme.typography.titleMedium)
                         PrimaryToySelectRadioButton()
-                        Text("Audio Visualizer Settings")
-                        CheckboxBoolSetting("Show Audio Visualizer", AUDIO_VISUALIZER_ENABLED_SETTING_KEY, ::onValueChanged)
+                        Text(
+                            "Audio Visualizer Settings",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        CheckboxBoolSetting(
+                            "Show Audio Visualizer",
+                            AUDIO_VISUALIZER_ENABLED_SETTING_KEY,
+                            ::onBooleanValueChanged
+                        )
+                        Text(
+                            text = "Rotation Type",
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.padding(start = 16.dp),
+                        )
+                        AudioVisualizerRotationTypeSelectRadioButton()
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        Text("Notifications", style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            "Notification Settings",
+                            style = MaterialTheme.typography.titleMedium
+                        )
 
-                        LazyColumn {
+                        val notifications by NotificationListener.notifications.collectAsState()
+                        Text(
+                            text = "    Currently active notifications: ${notifications.size}",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+
+                        CheckboxBoolSetting(
+                            "Show Notification Ring",
+                            SHOW_NOTIFICATION_RING_SETTING_KEY,
+                            ::onBooleanValueChanged
+                        )
+
+                        /*LazyColumn {
                             items(notifications) { notif ->
                                 NotificationRow(notif)
                             }
-                        }
+                        }*/
                     }
                 }
             }
@@ -89,16 +191,8 @@ class MainActivity : ComponentActivity() {
         Column(modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp)) {
-
-            Text(
-                text = "${item.title ?: ""}",
-                style = MaterialTheme.typography.bodyLarge
-            )
-
-            Text(
-                text = item.text ?: "",
-                style = MaterialTheme.typography.bodyMedium
-            )
+            Text(text = "${item.title ?: ""}", style = MaterialTheme.typography.bodyLarge)
+            Text(text = item.text ?: "", style = MaterialTheme.typography.bodyMedium)
         }
     }
 
@@ -145,7 +239,20 @@ class MainActivity : ComponentActivity() {
     fun PrimaryToySelectRadioButton() {
         val options = listOf(0, 1)
         val texts = listOf("Clock", "Game of Life")
-        val selectedOption = remember { mutableStateOf(sharedPreferences.getInt(PRIMARY_TOY_SETTING_KEY, 0)) }
+        SelectRadioButton(options, texts, PRIMARY_TOY_SETTING_KEY)
+    }
+
+    @Preview
+    @Composable
+    fun AudioVisualizerRotationTypeSelectRadioButton() {
+        val options = listOf(0, 1, 2)
+        val texts = listOf("Axis", "Full", "None")
+        SelectRadioButton(options, texts, AUDIO_VISUALIZER_ROTATION_SETTING_KEY)
+    }
+
+    @Composable
+    fun SelectRadioButton(options: List<Int>, texts: List<String>, valueKey: String) {
+        val selectedOption = remember { mutableStateOf(sharedPreferences.getInt(valueKey, 0)) }
         Column {
             options.forEach { option ->
                 Row (
@@ -155,7 +262,7 @@ class MainActivity : ComponentActivity() {
                             selected = selectedOption.value == option,
                             onClick = {
                                 selectedOption.value = option
-                                onPrimaryToySelected(selectedOption.value)
+                                OnIntValueChanged(selectedOption.value, valueKey)
                             }
                         )
                         .padding(horizontal = 16.dp)
@@ -164,7 +271,7 @@ class MainActivity : ComponentActivity() {
                         selected = selectedOption.value == option,
                         onClick = {
                             selectedOption.value = option
-                            onPrimaryToySelected(selectedOption.value)
+                            OnIntValueChanged(selectedOption.value, valueKey)
                         }
                     )
                     Text(texts[option],
@@ -175,11 +282,11 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    fun onValueChanged(newState: Boolean, valueKey: String) {
+    fun onBooleanValueChanged(newState: Boolean, valueKey: String) {
         sharedPreferences.edit { putBoolean(valueKey, newState) }
     }
 
-    fun onPrimaryToySelected(newToy: Int) {
-        sharedPreferences.edit { putInt(PRIMARY_TOY_SETTING_KEY, newToy) }
+    fun OnIntValueChanged(newToy: Int, valueKey: String) {
+        sharedPreferences.edit { putInt(valueKey, newToy) }
     }
 }

@@ -12,7 +12,6 @@ data class NotificationItem(
 )
 
 class NotificationListener : NotificationListenerService() {
-
     companion object {
         private val _notifications = MutableStateFlow<List<NotificationItem>>(emptyList())
         val notifications: StateFlow<List<NotificationItem>> = _notifications
@@ -47,12 +46,14 @@ class NotificationListener : NotificationListenerService() {
 
     private fun extractNotification(sbn: StatusBarNotification): NotificationItem? {
         val extras = sbn.notification.extras
+        val bubble = sbn.notification.bubbleMetadata?.isNotificationSuppressed ?: false
 
         val title = extras.getString("android.title")
         val text = extras.getCharSequence("android.text")?.toString()
+        val identical = notifications.value.any { n -> n.title == title && n.text == text }
 
         // Filter junk / ghost notifications
-        if (title.isNullOrBlank() && text.isNullOrBlank() || !sbn.isGroup) return null
+        if (identical || title.isNullOrBlank() && text.isNullOrBlank() || bubble) return null
 
         return NotificationItem(
             appName = sbn.packageName,
