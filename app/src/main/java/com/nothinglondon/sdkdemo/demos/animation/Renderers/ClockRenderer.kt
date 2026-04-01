@@ -1,13 +1,17 @@
-package com.nothinglondon.sdkdemo.demos.animation
+package com.nothinglondon.sdkdemo.demos.animation.Renderers
 
+import android.content.Context
 import com.nothing.ketchum.GlyphMatrixFrame
 import com.nothing.ketchum.GlyphMatrixObject
+import com.nothinglondon.sdkdemo.demos.animation.ArrayModifierApplyMode
 import com.nothinglondon.sdkdemo.demos.animation.GlyphMatrixUtils.BOTTOM_LINE
 import com.nothinglondon.sdkdemo.demos.animation.GlyphMatrixUtils.HEIGHT
 import com.nothinglondon.sdkdemo.demos.animation.GlyphMatrixUtils.MID_POINT
 import com.nothinglondon.sdkdemo.demos.animation.GlyphMatrixUtils.TOP_LINE
 import com.nothinglondon.sdkdemo.demos.animation.GlyphMatrixUtils.WIDTH
+import com.nothinglondon.sdkdemo.demos.animation.GlyphMatrixUtils.applyModifierToArray
 import com.nothinglondon.sdkdemo.demos.animation.GlyphMatrixUtils.getCenteredTextX
+import com.nothinglondon.sdkdemo.demos.animation.NotificationListener
 import java.lang.Math.clamp
 import java.lang.Math.toRadians
 import java.time.LocalDateTime
@@ -16,12 +20,12 @@ import kotlin.math.pow
 import kotlin.math.sin
 import kotlin.math.sqrt
 
-class ClockProvider: IFrameProvider {
+class ClockRenderer: IFrameRenderer {
     private companion object {
         private const val CLOCK_ANIMATION_SPEED: Long = 200
     }
 
-    override fun initialize() { }
+    override fun initialize(context: Context) { }
 
     override fun dispose() { }
 
@@ -29,10 +33,11 @@ class ClockProvider: IFrameProvider {
         val currentTime = LocalDateTime.now()
         val hourText = formatTime(currentTime.hour)
         val minuteText = formatTime(currentTime.minute)
-        val secondsArray = getSecondsArray(currentTime.second + currentTime.nano / 1000000000.0)
+        val secondsArray = applyModifierToArray(getSecondsArray(currentTime.second + currentTime.nano / 1000000000.0), modifier, ArrayModifierApplyMode.ADD)
 
         val textObject = GlyphMatrixObject.Builder().setText(hourText)
             .setPosition(getCenteredTextX(hourText), TOP_LINE)
+            .setBrightness(255)
             .build()
 
         val textObject2 = GlyphMatrixObject.Builder().setText(minuteText)

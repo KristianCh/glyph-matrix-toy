@@ -1,9 +1,10 @@
-package com.nothinglondon.sdkdemo.demos.animation
+package com.nothinglondon.sdkdemo.demos.animation.Renderers
 
+import android.content.Context
 import com.nothing.ketchum.GlyphMatrixFrame
 
-interface IFrameProvider {
-    fun initialize()
+interface IFrameRenderer {
+    fun initialize(context: Context)
     fun dispose()
     fun getFrameData(modifier: IntArray?): GlyphMatrixFrame.Builder
     fun getFrameTime(): Long

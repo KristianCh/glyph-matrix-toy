@@ -1,56 +1,63 @@
 package com.nothinglondon.sdkdemo.demos.animation
 
-import android.content.Intent
-import android.os.Binder
-import android.os.IBinder
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
-class NotificationListener: NotificationListenerService() {
+data class NotificationItem(
+    val appName: String,
+    val title: String?,
+    val text: String?
+)
 
-    private val binder = NotificationListenerBinder()
-    var notificationListener: OnNotificationListener? = null
+class NotificationListener : NotificationListenerService() {
 
-    override fun onBind(intent: Intent?): IBinder? {
-        return binder
-    }
-
-    override fun onNotificationPosted(sbn: StatusBarNotification) {
-        super.onNotificationPosted(sbn)
-        updateListener()
-    }
-
-    override fun onNotificationRemoved(sbn: StatusBarNotification?) {
-        super.onNotificationRemoved(sbn)
-        updateListener()
+    companion object {
+        private val _notifications = MutableStateFlow<List<NotificationItem>>(emptyList())
+        val notifications: StateFlow<List<NotificationItem>> = _notifications
     }
 
     override fun onListenerConnected() {
-        super.onListenerConnected()
-
-        notificationListener?.test(3);
+        loadActiveNotifications()
     }
 
-    public fun setListener(listener: OnNotificationListener) {
-        notificationListener = listener
-        updateListener()
+    override fun onNotificationPosted(sbn: StatusBarNotification) {
+        val item = extractNotification(sbn) ?: return
+
+        val updated = _notifications.value.toMutableList()
+        updated.add(0, item)
+        _notifications.value = updated
     }
 
-    public fun unsetListener() {
-        notificationListener = null
+    override fun onNotificationRemoved(sbn: StatusBarNotification) {
+        loadActiveNotifications()
     }
 
-    private fun updateListener() {
-        if (notificationListener == null) return
-        notificationListener?.onNotificationsChanged(super.activeNotifications.size)
+    private fun loadActiveNotifications() {
+        val list: MutableList<NotificationItem> = mutableListOf()
+        activeNotifications.forEach {
+            val item = extractNotification(it)
+            if (item != null) {
+                list.add(item)
+            }
+        }
+        _notifications.value = list
     }
 
-    inner class NotificationListenerBinder : Binder() {
-        fun getService(): NotificationListener = this@NotificationListener
-    }
-}
+    private fun extractNotification(sbn: StatusBarNotification): NotificationItem? {
+        val extras = sbn.notification.extras
 
-interface OnNotificationListener {
-    fun onNotificationsChanged(remaining: Int)
-    fun test(int: Int)
+        val title = extras.getString("android.title")
+        val text = extras.getCharSequence("android.text")?.toString()
+
+        // Filter junk / ghost notifications
+        if (title.isNullOrBlank() && text.isNullOrBlank() || !sbn.isGroup) return null
+
+        return NotificationItem(
+            appName = sbn.packageName,
+            title = title,
+            text = text
+        )
+    }
 }

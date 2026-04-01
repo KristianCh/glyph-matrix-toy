@@ -8,6 +8,14 @@ import android.content.SharedPreferences
 import android.os.IBinder
 import com.nothing.ketchum.GlyphMatrixManager
 import com.nothinglondon.sdkdemo.demos.GlyphMatrixService
+import com.nothinglondon.sdkdemo.demos.animation.GlyphMatrixUtils.notificationFrame
+import com.nothinglondon.sdkdemo.demos.animation.Renderers.AudioVisualizerRenderer
+import com.nothinglondon.sdkdemo.demos.animation.Renderers.ClockRenderer
+import com.nothinglondon.sdkdemo.demos.animation.Renderers.GameOfLiveRenderer
+import com.nothinglondon.sdkdemo.demos.animation.Renderers.IFrameRenderer
+import com.nothinglondon.sdkdemo.demos.animation.SettingsConstants.AUDIO_VISUALIZER_ENABLED_SETTING_KEY
+import com.nothinglondon.sdkdemo.demos.animation.SettingsConstants.PRIMARY_TOY_SETTING_KEY
+import com.nothinglondon.sdkdemo.demos.animation.SettingsConstants.SETTINGS_PREFERENCES_NAME
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -17,8 +25,6 @@ import kotlinx.coroutines.launch
 
 class AnimationDemoService : GlyphMatrixService("Animation-Demo") {
     private companion object {
-        private const val SETTINGS_PREFERENCES_NAME = "SettingsPreferences"
-        private const val AUDIO_VISUALIZER_ENABLED_SETTING_KEY = "AudioVisualizerEnabled"
         private const val AUDIO_COOLDOWN_TIME = 2000
     }
 
@@ -27,72 +33,50 @@ class AnimationDemoService : GlyphMatrixService("Animation-Demo") {
 
 
     // Enhanced audio detection with Visualizer API
-    private val audioVisualizer: AudioVisualizer = AudioVisualizer()
-    private val clockProvider: ClockProvider = ClockProvider()
+    private val audioVisualizerProvider: AudioVisualizerRenderer = AudioVisualizerRenderer()
+    private val clockProvider: ClockRenderer = ClockRenderer()
+    private val gameOfLiveProvider: GameOfLiveRenderer = GameOfLiveRenderer()
     private var lastAudioTime: Long = System.currentTimeMillis()
 
     private lateinit var mService: NotificationListener
     private var mNLSBound: Boolean = false
     private var activeNotifications = 0
     lateinit var sharedPreferences: SharedPreferences
-    private val connection = object : ServiceConnection {
-
-        override fun onServiceConnected(className: ComponentName, service: IBinder) {
-            // We've bound to NotificationListener service, cast the IBinder and get NotificationListener instance.
-            val binder = service as NotificationListener.NotificationListenerBinder
-            mService = binder.getService()
-            mNLSBound = true
-
-            //mService.
-            mService.setListener(object : OnNotificationListener {
-                override fun onNotificationsChanged(
-                    remaining: Int
-                )
-                {
-                    activeNotifications += remaining + 1
-                }
-
-                override fun test(int: Int) {
-                    activeNotifications += int
-                }
-            })
-        }
-
-        override fun onServiceDisconnected(arg0: ComponentName) {
-            mService.unsetListener()
-            mNLSBound = false
-        }
-    }
 
     override fun performOnServiceConnected(
         context: Context,
         glyphMatrixManager: GlyphMatrixManager
     ) {
-        audioVisualizer.initialize()
-        clockProvider.initialize()
+        audioVisualizerProvider.initialize(this)
+        clockProvider.initialize(this)
+        gameOfLiveProvider.initialize(this)
+
         lastAudioTime = System.currentTimeMillis() - AUDIO_COOLDOWN_TIME
 
         sharedPreferences = getSharedPreferences(SETTINGS_PREFERENCES_NAME, MODE_PRIVATE)
 
-        Intent(this, NotificationListener::class.java).also { intent ->
-            bindService(intent, connection, BIND_AUTO_CREATE)
-        }
-
         backgroundScope.launch {
             while (isActive) {
-                var currentFrameProvider: IFrameProvider = clockProvider
+                val currentPrimaryToy = sharedPreferences.getInt(PRIMARY_TOY_SETTING_KEY, 0)
+
+                var currentFrameProvider: IFrameRenderer = when (currentPrimaryToy) {
+                    0 -> clockProvider
+                    1 -> gameOfLiveProvider
+                    else -> clockProvider
+                }
 
                 val audioVisualizerEnabled = sharedPreferences.getBoolean(AUDIO_VISUALIZER_ENABLED_SETTING_KEY, true)
-                val audioPresent = audioVisualizer.canPlay()
+                val audioPresent = audioVisualizerProvider.canPlay()
                 val currentTimeMillis = System.currentTimeMillis()
                 val showVisualizer = audioVisualizerEnabled && (audioPresent || currentTimeMillis - lastAudioTime < AUDIO_COOLDOWN_TIME)
                 if (showVisualizer) {
                     if (audioPresent)
                         lastAudioTime = currentTimeMillis
-                    currentFrameProvider = audioVisualizer
+                    currentFrameProvider = audioVisualizerProvider
                 }
 
-                val frameData = currentFrameProvider.getFrameData(null).build(applicationContext).render()
+                val modifier: IntArray? = if (NotificationListener.notifications.value.size > 0) notificationFrame else null
+                val frameData = currentFrameProvider.getFrameData(modifier).build(applicationContext).render()
                 uiScope.launch {
                     glyphMatrixManager.setMatrixFrame(frameData)
                 }
@@ -105,9 +89,5 @@ class AnimationDemoService : GlyphMatrixService("Animation-Demo") {
 
     override fun performOnServiceDisconnected(context: Context) {
         backgroundScope.cancel()
-
-        try {
-            unbindService(connection)
-        } catch (e: Exception) { }
     }
 }

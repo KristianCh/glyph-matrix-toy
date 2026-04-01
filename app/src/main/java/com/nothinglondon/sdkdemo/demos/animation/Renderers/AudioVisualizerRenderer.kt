@@ -1,11 +1,14 @@
-package com.nothinglondon.sdkdemo.demos.animation
+package com.nothinglondon.sdkdemo.demos.animation.Renderers
 
+import android.content.Context
 import android.media.audiofx.Visualizer
 import android.util.Log
 import com.nothing.ketchum.GlyphMatrixFrame
+import com.nothinglondon.sdkdemo.demos.animation.ArrayModifierApplyMode
 import com.nothinglondon.sdkdemo.demos.animation.GlyphMatrixUtils.HEIGHT
 import com.nothinglondon.sdkdemo.demos.animation.GlyphMatrixUtils.MAX_BRIGHTNESS
 import com.nothinglondon.sdkdemo.demos.animation.GlyphMatrixUtils.WIDTH
+import com.nothinglondon.sdkdemo.demos.animation.GlyphMatrixUtils.applyModifierToArray
 import java.lang.Math.clamp
 import kotlin.math.exp
 import kotlin.math.ln
@@ -13,7 +16,7 @@ import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
-class AudioVisualizer: IFrameProvider {
+class AudioVisualizerRenderer: IFrameRenderer {
     private companion object {
         private const val AUDIO_VISUALIZER_ANIMATION_SPEED: Long = 33
         private const val AUDIO_BANDS = 13
@@ -29,7 +32,7 @@ class AudioVisualizer: IFrameProvider {
     private val spectrumBands = FloatArray(AUDIO_BANDS) { 0f }
     private var audioPresent = false
 
-    override fun initialize() {
+    override fun initialize(context: Context) {
         initializeVisualizer()
     }
 
@@ -64,8 +67,9 @@ class AudioVisualizer: IFrameProvider {
             }
         }
 
+
         val frameData = GlyphMatrixFrame.Builder()
-            .addTop(grid.toIntArray())
+            .addTop(applyModifierToArray(grid.toIntArray(), modifier, ArrayModifierApplyMode.ADD))
         return frameData
     }
 
