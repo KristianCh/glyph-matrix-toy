@@ -19,10 +19,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import android.Manifest
+import android.app.Activity
+import android.net.Uri
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
@@ -49,9 +52,12 @@ import com.nothinglondon.sdkdemo.demos.animation.SettingsConstants.PRIMARY_TOY_S
 import com.nothinglondon.sdkdemo.demos.animation.SettingsConstants.SETTINGS_PREFERENCES_NAME
 import com.nothinglondon.sdkdemo.demos.animation.SettingsConstants.SHOW_NOTIFICATION_RING_SETTING_KEY
 import com.nothinglondon.sdkdemo.ui.theme.NothingAndroidSDKDemoTheme
+import kotlinx.coroutines.flow.MutableStateFlow
 
 class MainActivity : ComponentActivity() {
     lateinit var sharedPreferences: SharedPreferences
+    val notificationPermissionsGranted: MutableStateFlow<Boolean> = MutableStateFlow<Boolean> (false)
+    val audioPermissionsGranted: MutableStateFlow<Boolean> = MutableStateFlow<Boolean> (false)
 
     override fun onStart() {
         super.onStart()
@@ -63,15 +69,18 @@ class MainActivity : ComponentActivity() {
             context.contentResolver,
             "enabled_notification_listeners"
         ) ?: return false
-
-        return flat.split(":").any { it.contains(packageName) }
+        val hasPerm = flat.split(":").any { it.contains(packageName) }
+        notificationPermissionsGranted.value = hasPerm
+        return hasPerm
     }
 
     fun hasAudioPermission(context: Context): Boolean {
-        return ContextCompat.checkSelfPermission(
+        val hasPerm = ContextCompat.checkSelfPermission(
             context,
             Manifest.permission.RECORD_AUDIO
         ) == PackageManager.PERMISSION_GRANTED
+        audioPermissionsGranted.value = hasPerm
+        return hasPerm
     }
 
     fun requestNotificationAccess(context: Context) {
@@ -80,11 +89,27 @@ class MainActivity : ComponentActivity() {
         context.startActivity(intent)
     }
 
+    fun openAppSettings(context: Context) {
+        val intent = Intent(
+            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+            Uri.fromParts("package", context.packageName, null)
+        )
+        context.startActivity(intent)
+    }
+
+    fun shouldShowAudioRationale(activity: Activity): Boolean {
+        return ActivityCompat.shouldShowRequestPermissionRationale(
+            activity,
+            Manifest.permission.RECORD_AUDIO
+        )
+    }
+
     private val requestAudioPermission = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted ->
         if (granted) {
             startService(Intent(this, MainActivity::class.java))
+            audioPermissionsGranted.value = true
         } else {
             // Show explanation to user
         }
@@ -93,30 +118,15 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
 
-        if (!isNotificationServiceEnabled(this)) {
-            requestNotificationAccess(this)
-        }
+        audioPermissionsGranted.value = hasAudioPermission(this)
+        notificationPermissionsGranted.value = isNotificationServiceEnabled(this)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        if (!isNotificationServiceEnabled(this)) {
-            requestNotificationAccess(this)
-        }
-
-        when {
-            !hasAudioPermission(this) -> {
-                requestAudioPermission.launch(Manifest.permission.RECORD_AUDIO)
-            }
-
-            !isNotificationServiceEnabled(this) -> {
-                requestNotificationAccess(this)
-            }
-
-            else -> {
-                startService(Intent(this, MainActivity::class.java))
-            }
+        if (!hasAudioPermission(this)) {
+            requestAudioPermission.launch(Manifest.permission.RECORD_AUDIO)
         }
 
         sharedPreferences = getSharedPreferences(SETTINGS_PREFERENCES_NAME, MODE_PRIVATE)
@@ -125,7 +135,6 @@ class MainActivity : ComponentActivity() {
         setContent {
             NothingAndroidSDKDemoTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    val scrollState = rememberScrollState()
                     Column(
                         modifier = Modifier
                             .fillMaxSize()
@@ -143,17 +152,28 @@ class MainActivity : ComponentActivity() {
                             "Audio Visualizer Settings",
                             style = MaterialTheme.typography.titleMedium
                         )
-                        CheckboxBoolSetting(
-                            "Show Audio Visualizer",
-                            AUDIO_VISUALIZER_ENABLED_SETTING_KEY,
-                            ::onBooleanValueChanged
-                        )
-                        Text(
-                            text = "Rotation Type",
-                            style = MaterialTheme.typography.bodyLarge,
-                            modifier = Modifier.padding(start = 16.dp),
-                        )
-                        AudioVisualizerRotationTypeSelectRadioButton()
+                        val audioPermGranted by audioPermissionsGranted.collectAsState()
+                        if (audioPermGranted) {
+                            CheckboxBoolSetting(
+                                "Show Audio Visualizer",
+                                AUDIO_VISUALIZER_ENABLED_SETTING_KEY,
+                                ::onBooleanValueChanged
+                            )
+                            Text(
+                                text = "Rotation Type",
+                                style = MaterialTheme.typography.bodyLarge,
+                                modifier = Modifier.padding(start = 16.dp),
+                            )
+                            AudioVisualizerRotationTypeSelectRadioButton()
+                        }
+                        else {
+                            Button(onClick = {
+                                if (shouldShowAudioRationale(this@MainActivity)) { requestAudioPermission.launch(Manifest.permission.RECORD_AUDIO) }
+                                else { openAppSettings(this@MainActivity) }
+                            }) {
+                                Text(text = "Enabled permission", style = MaterialTheme.typography.bodyLarge)
+                            }
+                        }
 
                         Spacer(modifier = Modifier.height(16.dp))
 
@@ -162,23 +182,34 @@ class MainActivity : ComponentActivity() {
                             style = MaterialTheme.typography.titleMedium
                         )
 
-                        val notifications by NotificationListener.notifications.collectAsState()
-                        Text(
-                            text = "    Currently active notifications: ${notifications.size}",
-                            style = MaterialTheme.typography.bodyLarge
-                        )
 
-                        CheckboxBoolSetting(
-                            "Show Notification Ring",
-                            SHOW_NOTIFICATION_RING_SETTING_KEY,
-                            ::onBooleanValueChanged
-                        )
+                        val notifPermGranted by notificationPermissionsGranted.collectAsState()
+                        if (notifPermGranted) {
+                            val notifications by NotificationListener.notifications.collectAsState()
+                            Text(
+                                text = "    Currently active notifications: ${notifications.size}",
+                                style = MaterialTheme.typography.bodyLarge
+                            )
 
-                        /*LazyColumn {
-                            items(notifications) { notif ->
-                                NotificationRow(notif)
+                            CheckboxBoolSetting(
+                                "Show Notification Ring",
+                                SHOW_NOTIFICATION_RING_SETTING_KEY,
+                                ::onBooleanValueChanged
+                            )
+
+                            /*LazyColumn {
+                                items(notifications) { notif ->
+                                    NotificationRow(notif)
+                                }
+                            }*/
+                        }
+                        else {
+                            Button(onClick = {
+                                requestNotificationAccess(this@MainActivity)
+                            }) {
+                                Text(text = "Enabled permission for app in settings", style = MaterialTheme.typography.bodyLarge)
                             }
-                        }*/
+                        }
                     }
                 }
             }
@@ -198,7 +229,7 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     fun CheckboxBoolSetting(text: String, valueKey: String, actionOnChanged: (Boolean, String) -> Unit) {
-        val (checkedState, onStateChange) = remember { mutableStateOf(sharedPreferences.getBoolean(valueKey, true)) }
+        val (checkedState, onStateChange) = remember { mutableStateOf(sharedPreferences.getBoolean(valueKey, false)) }
         val interactionSource = remember { MutableInteractionSource() }
         Row(
             Modifier

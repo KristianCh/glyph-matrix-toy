@@ -93,7 +93,7 @@ class AnimationDemoService : GlyphMatrixService("Animation-Demo") {
                 }
 
                 var lastAudioVisualizerEnabled = audioVisualizerEnabled
-                audioVisualizerEnabled = sharedPreferences.getBoolean(AUDIO_VISUALIZER_ENABLED_SETTING_KEY, true)
+                audioVisualizerEnabled = sharedPreferences.getBoolean(AUDIO_VISUALIZER_ENABLED_SETTING_KEY, false)
                 if (lastAudioVisualizerEnabled != audioVisualizerEnabled) {
                     audioVisualizerProvider.setEnabled(audioVisualizerEnabled)
                 }
@@ -126,7 +126,7 @@ class AnimationDemoService : GlyphMatrixService("Animation-Demo") {
                     currentFrameProvider = audioVisualizerProvider
                 }
 
-                val notificationRingEnabled = sharedPreferences.getBoolean(SHOW_NOTIFICATION_RING_SETTING_KEY, true)
+                val notificationRingEnabled = sharedPreferences.getBoolean(SHOW_NOTIFICATION_RING_SETTING_KEY, false)
                 val modifier: IntArray? = if (notificationRingEnabled && NotificationListener.notifications.value.size > 0) getNotificationFrame() else null
                 val frameData = currentFrameProvider.getFrameData(modifier).build(applicationContext).render()
                 uiScope.launch {
