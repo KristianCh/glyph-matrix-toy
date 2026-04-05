@@ -1,6 +1,8 @@
 package com.nothinglondon.sdkdemo.demos.animation
 
+import java.lang.Character.toLowerCase
 import java.time.LocalDateTime
+import kotlin.math.abs
 
 object GlyphMatrixUtils {
     const val WIDTH = 13
@@ -34,19 +36,19 @@ object GlyphMatrixUtils {
     ).toIntArray()
 
     val notificationFrame2 = arrayOf(
-        0, 0, 0, 0, J, I, I, I, J, 0, 0, 0, 0,
-        0, 0, J, I, 0, 0, 0, 0, 0, I, J, 0, 0,
+        0, 0, 0, 0, J, J, J, J, J, 0, 0, 0, 0,
+        0, 0, J, J, 0, 0, 0, 0, 0, J, J, 0, 0,
         0, J, 0, 0, 0, 0, 0, 0, 0, 0, 0, J, 0,
-        0, I, 0, 0, 0, 0, 0, 0, 0, 0, 0, I, 0,
-        J, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, J,
-        I, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, I,
-        I, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, I,
-        I, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, I,
-        J, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, J,
-        0, I, 0, 0, 0, 0, 0, 0, 0, 0, 0, I, 0,
         0, J, 0, 0, 0, 0, 0, 0, 0, 0, 0, J, 0,
-        0, 0, J, I, 0, 0, 0, 0, 0, I, J, 0, 0,
-        0, 0, 0, 0, J, I, I, I, J, 0, 0, 0, 0,
+        J, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, J,
+        J, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, J,
+        J, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, J,
+        J, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, J,
+        J, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, J,
+        0, J, 0, 0, 0, 0, 0, 0, 0, 0, 0, J, 0,
+        0, J, 0, 0, 0, 0, 0, 0, 0, 0, 0, J, 0,
+        0, 0, J, J, 0, 0, 0, 0, 0, J, J, 0, 0,
+        0, 0, 0, 0, J, J, J, J, J, 0, 0, 0, 0,
     ).toIntArray()
 
     val crossFrame = arrayOf(
@@ -70,6 +72,32 @@ object GlyphMatrixUtils {
         return if (second % 2 != 0) notificationFrame else notificationFrame2
     }
 
+    fun drawLine(grid: IntArray, x0: Int, y0: Int, x1: Int, y1: Int, brightness: Int) {
+        var x = x0
+        var y = y0
+
+        val dx = abs(x1 - x)
+        val sx = if (x < x1) 1 else -1
+        val dy = -abs(y1 - y)
+        val sy = if (y < y1) 1 else -1
+        var error = dx + dy
+
+        while (true) {
+            grid[y * WIDTH + x] = brightness
+            val e2 = 2 * error
+            if (e2 >= dy) {
+                if (x == x1) break
+                error = error + dy
+                x = x + sx
+            }
+            if (e2 <= dx) {
+                if (y == y1) break
+                error = error + dx
+                y = y + sy
+            }
+        }
+    }
+
     fun applyModifierToArray(array: IntArray, modifier: IntArray?, mode: ArrayModifierApplyMode): IntArray {
         if (modifier == null || array.size != modifier.size) return array
         val result = when (mode) {
@@ -82,24 +110,45 @@ object GlyphMatrixUtils {
 
     fun getTextLength(string: String): Int {
         var l = 0
-        var wasLastSpace = false
         for (i in 0..<string.length) {
-            if (string[i] != ' ') {
-                l += CHARACTER_WIDTH
-                wasLastSpace = false
-            }
-            else {
-                if (!wasLastSpace)
-                    l++
-                wasLastSpace = true
-            }
-            if (i < string.length - 1)
-                l += CHARACTER_SEPARATOR_WIDTH
+            l += getCharacterPixelWidth(string[i]) + 1
         }
         return l
     }
 
     fun getCenteredTextX(text: String): Int {
         return MID_POINT - getTextLength(text) / 2 + 1
+    }
+
+    fun getMappedText(text: String): String {
+        return text
+            .replace('á', 'a', true)
+            .replace('ä', 'a', true)
+            .replace('č', 'c', true)
+            .replace('ď', 'd', true)
+            .replace('é', 'e', true)
+            .replace('í', 'i', true)
+            .replace('ľ', 'l', true)
+            .replace('ĺ', 'l', true)
+            .replace('ň', 'n', true)
+            .replace('ó', 'o', true)
+            .replace('ô', 'o', true)
+            .replace('ŕ', 'r', true)
+            .replace('š', 's', true)
+            .replace('ť', 't', true)
+            .replace('ú', 'u', true)
+            .replace('ý', 'y', true)
+            .replace('ž', 'z', true)
+    }
+
+    fun getCharacterPixelWidth(char: Char): Int {
+        val lowerChar = toLowerCase(char)
+        return when(lowerChar) {
+            'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'j', 'k', 'l', 'o', 'p', 'q', 'r', 's', 'u', 'x', 'y', 'z', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '%' -> 4
+            'i', 't', 'v', '-', '_' -> 3
+            'm', 'n', 'w', '+' -> 5
+            '.', ',', ':', ' ', '!' -> 1
+            else -> 0
+        }
     }
 }

@@ -1,13 +1,10 @@
 package com.nothinglondon.sdkdemo.demos.animation
 
-import android.Manifest
 import android.content.Context
 import android.content.SharedPreferences
-import android.content.pm.PackageManager
-import android.hardware.SensorManager.SENSOR_DELAY_GAME
 import android.hardware.SensorManager.SENSOR_DELAY_NORMAL
 import android.hardware.SensorManager.SENSOR_DELAY_UI
-import androidx.core.content.ContextCompat
+import android.util.Log
 import com.nothing.ketchum.GlyphMatrixManager
 import com.nothinglondon.sdkdemo.demos.GlyphMatrixService
 import com.nothinglondon.sdkdemo.demos.animation.GlyphMatrixUtils.getNotificationFrame
@@ -15,11 +12,15 @@ import com.nothinglondon.sdkdemo.demos.animation.Renderers.AudioVisualizerRender
 import com.nothinglondon.sdkdemo.demos.animation.Renderers.ClockRenderer
 import com.nothinglondon.sdkdemo.demos.animation.Renderers.GameOfLiveRenderer
 import com.nothinglondon.sdkdemo.demos.animation.Renderers.IFrameRenderer
+import com.nothinglondon.sdkdemo.demos.animation.Renderers.NotificationTextScrollRenderer
 import com.nothinglondon.sdkdemo.demos.animation.SettingsConstants.AUDIO_VISUALIZER_ENABLED_SETTING_KEY
 import com.nothinglondon.sdkdemo.demos.animation.SettingsConstants.AUDIO_VISUALIZER_ROTATION_SETTING_KEY
+import com.nothinglondon.sdkdemo.demos.animation.SettingsConstants.NOTIFICATION_SCROLL_INCLUDE_BODY_SETTING_KEY
+import com.nothinglondon.sdkdemo.demos.animation.SettingsConstants.NOTIFICATION_SCROLL_REPEAT_TIME_SETTING_KEY
 import com.nothinglondon.sdkdemo.demos.animation.SettingsConstants.PRIMARY_TOY_SETTING_KEY
 import com.nothinglondon.sdkdemo.demos.animation.SettingsConstants.SETTINGS_PREFERENCES_NAME
 import com.nothinglondon.sdkdemo.demos.animation.SettingsConstants.SHOW_NOTIFICATION_RING_SETTING_KEY
+import com.nothinglondon.sdkdemo.demos.animation.SettingsConstants.SHOW_NOTIFICATION_SCROLL_SETTING_KEY
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -32,6 +33,7 @@ import kotlinx.coroutines.launch
 class AnimationDemoService : GlyphMatrixService("Animation-Demo") {
     companion object {
         private const val AUDIO_COOLDOWN_TIME = 2000
+        private const val NOTIFICATION_SCROLL_COOLDOWN_TIME = 30000
 
         private val _currentRotation = MutableStateFlow(Orientation.PORTRAIT_UP)
         val currentRotation: StateFlow<Orientation> = _currentRotation
@@ -44,23 +46,29 @@ class AnimationDemoService : GlyphMatrixService("Animation-Demo") {
     private val backgroundScope = CoroutineScope(Dispatchers.IO)
     private val uiScope = CoroutineScope(Dispatchers.Main)
 
-    // Enhanced audio detection with Visualizer API
-    private val audioVisualizerProvider: AudioVisualizerRenderer = AudioVisualizerRenderer()
-    private val clockProvider: ClockRenderer = ClockRenderer()
-    private val gameOfLiveProvider: GameOfLiveRenderer = GameOfLiveRenderer()
-    private var lastAudioTime: Long = System.currentTimeMillis()
-
+    private val clockRenderer: ClockRenderer = ClockRenderer()
+    private val gameOfLiveRenderer: GameOfLiveRenderer = GameOfLiveRenderer()
     private var orientationListenerUI: OrientationListener? = null
     private var orientationListenerGame: OrientationListener? = null
     lateinit var sharedPreferences: SharedPreferences
+
+    // Audio visualizer values
+    private val audioVisualizerRenderer: AudioVisualizerRenderer = AudioVisualizerRenderer()
+    private var lastAudioTime: Long = System.currentTimeMillis()
+
+    // Notification values
+    private val notificationTextScrollRenderer: NotificationTextScrollRenderer = NotificationTextScrollRenderer()
+    private var lastNotificationCount = 0
+    private var lastNotificationScrollFinishTime: Long = System.currentTimeMillis()
 
     override fun performOnServiceConnected(
         context: Context,
         glyphMatrixManager: GlyphMatrixManager
     ) {
-        audioVisualizerProvider.initialize(this)
-        clockProvider.initialize(this)
-        gameOfLiveProvider.initialize(this)
+        audioVisualizerRenderer.initialize(this)
+        clockRenderer.initialize(this)
+        gameOfLiveRenderer.initialize(this)
+        notificationTextScrollRenderer.initialize(this)
 
         orientationListenerUI = orientationListenerUI ?: OrientationListener(this, SENSOR_DELAY_UI, { rotation ->
             _currentRotation.value = rotation
@@ -86,16 +94,17 @@ class AnimationDemoService : GlyphMatrixService("Animation-Demo") {
                 val currentTimeMillis = System.currentTimeMillis()
                 val currentPrimaryToy = sharedPreferences.getInt(PRIMARY_TOY_SETTING_KEY, 0)
 
-                var currentFrameProvider: IFrameRenderer = when (currentPrimaryToy) {
-                    0 -> clockProvider
-                    1 -> gameOfLiveProvider
-                    else -> clockProvider
+                var currentFrameRenderer: IFrameRenderer = when (currentPrimaryToy) {
+                    0 -> clockRenderer
+                    1 -> gameOfLiveRenderer
+                    else -> clockRenderer
                 }
 
+                // AUDIO VISUALIZER HANDLING
                 var lastAudioVisualizerEnabled = audioVisualizerEnabled
                 audioVisualizerEnabled = sharedPreferences.getBoolean(AUDIO_VISUALIZER_ENABLED_SETTING_KEY, false)
                 if (lastAudioVisualizerEnabled != audioVisualizerEnabled) {
-                    audioVisualizerProvider.setEnabled(audioVisualizerEnabled)
+                    audioVisualizerRenderer.setEnabled(audioVisualizerEnabled)
                 }
 
                 val lastAudioVisualizerRotationType = audioVisualizerRotationType
@@ -118,23 +127,56 @@ class AnimationDemoService : GlyphMatrixService("Animation-Demo") {
                     }
                 }
 
-                val audioPresent = audioVisualizerProvider.canPlay()
+                val audioPresent = audioVisualizerRenderer.canPlay()
                 val showVisualizer = audioVisualizerEnabled && (audioPresent || currentTimeMillis - lastAudioTime < AUDIO_COOLDOWN_TIME)
                 if (showVisualizer) {
                     if (audioPresent)
                         lastAudioTime = currentTimeMillis
-                    currentFrameProvider = audioVisualizerProvider
+                    currentFrameRenderer = audioVisualizerRenderer
                 }
 
+                // NOTIFICATION HANDLING
+
                 val notificationRingEnabled = sharedPreferences.getBoolean(SHOW_NOTIFICATION_RING_SETTING_KEY, false)
-                val modifier: IntArray? = if (notificationRingEnabled && NotificationListener.notifications.value.size > 0) getNotificationFrame() else null
-                val frameData = currentFrameProvider.getFrameData(modifier).build(applicationContext).render()
+                val notificationScrollEnabled = sharedPreferences.getBoolean(SHOW_NOTIFICATION_SCROLL_SETTING_KEY, false)
+                val notificationBodyEnabled = sharedPreferences.getBoolean(NOTIFICATION_SCROLL_INCLUDE_BODY_SETTING_KEY, false)
+                val notificationScrollCooldown = sharedPreferences.getInt(NOTIFICATION_SCROLL_REPEAT_TIME_SETTING_KEY, 0)
+                val currentNotificationCount = NotificationListener.notifications.value.size
+                val isNewNotification = lastNotificationCount < currentNotificationCount
+                val notificationsRemoved = lastNotificationCount > currentNotificationCount
+                lastNotificationCount = currentNotificationCount
+
+                if (notificationScrollEnabled)
+                {
+                    if (isNewNotification ||
+                        (
+                            notificationScrollCooldown > 0 &&
+                            !notificationTextScrollRenderer.canPlay() &&
+                            currentTimeMillis - lastNotificationScrollFinishTime > notificationScrollCooldown * 1000 &&
+                            currentNotificationCount > 0
+                        ))
+                    {
+                        notificationTextScrollRenderer.TryStartScroll({
+                            lastNotificationScrollFinishTime = System.currentTimeMillis()
+                        }, notificationBodyEnabled)
+                    }
+                    else if (notificationsRemoved) {
+                        notificationTextScrollRenderer.clear()
+                    }
+                }
+
+                if (notificationTextScrollRenderer.canPlay()) {
+                    currentFrameRenderer = notificationTextScrollRenderer
+                }
+
+                val modifier: IntArray? = if (notificationRingEnabled && currentNotificationCount > 0) getNotificationFrame() else null
+                val frameData = currentFrameRenderer.getFrameData(modifier).build(applicationContext).render()
                 uiScope.launch {
                     glyphMatrixManager.setMatrixFrame(frameData)
                 }
 
                 // wait a bit
-                delay(currentFrameProvider.getFrameTime())
+                delay(currentFrameRenderer.getFrameTime())
             }
         }
     }

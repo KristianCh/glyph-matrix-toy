@@ -8,12 +8,13 @@ import com.nothinglondon.sdkdemo.demos.animation.GlyphMatrixUtils.MAX_BRIGHTNESS
 import com.nothinglondon.sdkdemo.demos.animation.GlyphMatrixUtils.WIDTH
 import com.nothinglondon.sdkdemo.demos.animation.GlyphMatrixUtils.applyModifierToArray
 import com.nothinglondon.sdkdemo.demos.animation.GlyphMatrixUtils.crossFrame
+import kotlin.collections.toIntArray
 import kotlin.random.Random
 
 class GameOfLiveRenderer: IFrameRenderer {
     var cells = BooleanArray(WIDTH * HEIGHT) { false }
     val cellsNext = BooleanArray(WIDTH * HEIGHT) { false }
-    val cellsDisplay = IntArray(WIDTH * HEIGHT) { 0 }
+    var cellsDisplay = IntArray(WIDTH * HEIGHT) { 0 }
     var noChangeFrames = 0
 
     override fun initialize(context: Context) {
@@ -62,11 +63,7 @@ class GameOfLiveRenderer: IFrameRenderer {
         val frameData = GlyphMatrixFrame.Builder()
 
         if (noChangeFrames <= 10) {
-            for (i in 0..<HEIGHT) {
-                for (j in 0..<WIDTH) {
-                    cellsDisplay[j * WIDTH + i] = if (cells[j * WIDTH + i]) MAX_BRIGHTNESS else 0
-                }
-            }
+            cellsDisplay = cells.map { c -> if (c) MAX_BRIGHTNESS else 0 }.toIntArray()
             frameData.addTop(applyModifierToArray(cellsDisplay, modifier, ArrayModifierApplyMode.ADD))
         }
         else {

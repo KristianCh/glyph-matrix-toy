@@ -1,15 +1,18 @@
 package com.nothinglondon.sdkdemo.demos.animation.Renderers
 
 import android.content.Context
+import android.util.Log
 import com.nothing.ketchum.GlyphMatrixFrame
 import com.nothing.ketchum.GlyphMatrixObject
 import com.nothinglondon.sdkdemo.demos.animation.ArrayModifierApplyMode
 import com.nothinglondon.sdkdemo.demos.animation.GlyphMatrixUtils.BOTTOM_LINE
 import com.nothinglondon.sdkdemo.demos.animation.GlyphMatrixUtils.HEIGHT
+import com.nothinglondon.sdkdemo.demos.animation.GlyphMatrixUtils.MAX_BRIGHTNESS
 import com.nothinglondon.sdkdemo.demos.animation.GlyphMatrixUtils.MID_POINT
 import com.nothinglondon.sdkdemo.demos.animation.GlyphMatrixUtils.TOP_LINE
 import com.nothinglondon.sdkdemo.demos.animation.GlyphMatrixUtils.WIDTH
 import com.nothinglondon.sdkdemo.demos.animation.GlyphMatrixUtils.applyModifierToArray
+import com.nothinglondon.sdkdemo.demos.animation.GlyphMatrixUtils.drawLine
 import com.nothinglondon.sdkdemo.demos.animation.GlyphMatrixUtils.getCenteredTextX
 import com.nothinglondon.sdkdemo.demos.animation.NotificationListener
 import java.lang.Math.clamp
@@ -17,6 +20,8 @@ import java.lang.Math.toRadians
 import java.time.LocalDateTime
 import kotlin.math.cos
 import kotlin.math.pow
+import kotlin.math.roundToInt
+import kotlin.math.roundToLong
 import kotlin.math.sin
 import kotlin.math.sqrt
 
@@ -33,7 +38,7 @@ class ClockRenderer: IFrameRenderer {
         val currentTime = LocalDateTime.now()
         val hourText = formatTime(currentTime.hour)
         val minuteText = formatTime(currentTime.minute)
-        val secondsArray = applyModifierToArray(getSecondsArray(currentTime.second + currentTime.nano / 1000000000.0), modifier, ArrayModifierApplyMode.ADD)
+        val secondsArray = applyModifierToArray(getSecondsArray(currentTime.second), modifier, ArrayModifierApplyMode.ADD)
 
         val textObject = GlyphMatrixObject.Builder().setText(hourText)
             .setPosition(getCenteredTextX(hourText), TOP_LINE)
@@ -53,7 +58,8 @@ class ClockRenderer: IFrameRenderer {
     }
 
     override fun getFrameTime(): Long {
-        return CLOCK_ANIMATION_SPEED
+        val currentTime = LocalDateTime.now()
+        return (1000.0 - currentTime.nano / 1000000.0).roundToLong()
     }
 
     override fun canPlay(): Boolean {
@@ -66,21 +72,17 @@ class ClockRenderer: IFrameRenderer {
         return time.toString()
     }
 
-    private fun getSecondsArray(seconds: Double): IntArray {
-        val grid = Array(HEIGHT * WIDTH) { 0 }
-        val angleRange = 4.0
+    private fun getSecondsArray(seconds: Int): IntArray {
+        val grid = Array(HEIGHT * WIDTH) { 0 }.toIntArray()
         val targetAngle = seconds / 60.0 * 360
 
-        val targetX = sin(toRadians(targetAngle-90)) * 6
-        val targetY = cos(-toRadians(targetAngle-90)) * 6
-        for (i in 0..<HEIGHT) {
-            for (j in 0..<WIDTH) {
-                val x = j - MID_POINT
-                val y = i - MID_POINT
-                val distance = sqrt((targetX-x).pow(2) + (targetY-y).pow(2))
-                grid[j * WIDTH + i] = (clamp(angleRange-distance, 0.0, angleRange).pow(3) / angleRange * 255).toInt()
-            }
-        }
-        return grid.toIntArray()
+        val targetX = sin(-toRadians(targetAngle + 180)) * 6
+        val targetY = cos(toRadians(targetAngle + 180)) * 6
+
+        val x = targetX.roundToInt() + 6
+        val y = targetY.roundToInt() + 6
+        drawLine(grid, 6, 6, x, y, 1024)
+
+        return grid
     }
 }

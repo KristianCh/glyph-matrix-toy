@@ -30,12 +30,15 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
@@ -48,11 +51,15 @@ import com.nothinglondon.sdkdemo.demos.animation.NotificationItem
 import com.nothinglondon.sdkdemo.demos.animation.NotificationListener
 import com.nothinglondon.sdkdemo.demos.animation.SettingsConstants.AUDIO_VISUALIZER_ENABLED_SETTING_KEY
 import com.nothinglondon.sdkdemo.demos.animation.SettingsConstants.AUDIO_VISUALIZER_ROTATION_SETTING_KEY
+import com.nothinglondon.sdkdemo.demos.animation.SettingsConstants.NOTIFICATION_SCROLL_INCLUDE_BODY_SETTING_KEY
+import com.nothinglondon.sdkdemo.demos.animation.SettingsConstants.NOTIFICATION_SCROLL_REPEAT_TIME_SETTING_KEY
 import com.nothinglondon.sdkdemo.demos.animation.SettingsConstants.PRIMARY_TOY_SETTING_KEY
 import com.nothinglondon.sdkdemo.demos.animation.SettingsConstants.SETTINGS_PREFERENCES_NAME
 import com.nothinglondon.sdkdemo.demos.animation.SettingsConstants.SHOW_NOTIFICATION_RING_SETTING_KEY
+import com.nothinglondon.sdkdemo.demos.animation.SettingsConstants.SHOW_NOTIFICATION_SCROLL_SETTING_KEY
 import com.nothinglondon.sdkdemo.ui.theme.NothingAndroidSDKDemoTheme
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlin.math.roundToInt
 
 class MainActivity : ComponentActivity() {
     lateinit var sharedPreferences: SharedPreferences
@@ -197,6 +204,36 @@ class MainActivity : ComponentActivity() {
                                 ::onBooleanValueChanged
                             )
 
+                            CheckboxBoolSetting(
+                                "Show Scrolling Notification",
+                                SHOW_NOTIFICATION_SCROLL_SETTING_KEY,
+                                ::onBooleanValueChanged
+                            )
+
+                            CheckboxBoolSetting(
+                                "Include Notification Body in Scrolling Notification",
+                                NOTIFICATION_SCROLL_INCLUDE_BODY_SETTING_KEY,
+                                ::onBooleanValueChanged
+                            )
+
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = "Repeat Scroll every 5-60 seconds (0 for no repeat)",
+                                style = MaterialTheme.typography.bodyLarge,
+                                modifier = Modifier.padding(start = 16.dp),
+                            )
+                            var sliderValue by remember { mutableFloatStateOf(0f) }
+                            Slider (
+                                value = sliderValue,
+                                onValueChange = {
+                                    newValue -> sliderValue = newValue
+                                    OnIntValueChanged(newValue.roundToInt(), NOTIFICATION_SCROLL_REPEAT_TIME_SETTING_KEY)
+                                },
+                                valueRange = 0f .. 60f,
+                                steps = 12,
+                                modifier = Modifier.padding(32.dp, 0.dp)
+                            )
+
                             /*LazyColumn {
                                 items(notifications) { notif ->
                                     NotificationRow(notif)
@@ -317,7 +354,7 @@ class MainActivity : ComponentActivity() {
         sharedPreferences.edit { putBoolean(valueKey, newState) }
     }
 
-    fun OnIntValueChanged(newToy: Int, valueKey: String) {
-        sharedPreferences.edit { putInt(valueKey, newToy) }
+    fun OnIntValueChanged(newValue: Int, valueKey: String) {
+        sharedPreferences.edit { putInt(valueKey, newValue) }
     }
 }
