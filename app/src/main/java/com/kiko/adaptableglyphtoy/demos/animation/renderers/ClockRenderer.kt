@@ -1,4 +1,4 @@
-package com.kiko.adaptableglyphtoy.demos.animation.Renderers
+package com.kiko.adaptableglyphtoy.demos.animation.renderers
 
 import android.content.Context
 import com.kiko.adaptableglyphtoy.demos.animation.ArrayModifierApplyMode
@@ -19,10 +19,6 @@ import kotlin.math.roundToLong
 import kotlin.math.sin
 
 class ClockRenderer: IFrameRenderer {
-    private companion object {
-        private const val CLOCK_ANIMATION_SPEED: Long = 200
-    }
-
     override fun initialize(context: Context) { }
 
     override fun dispose() { }

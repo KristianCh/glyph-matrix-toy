@@ -10,11 +10,11 @@ import androidx.core.content.edit
 import com.nothing.ketchum.GlyphMatrixManager
 import com.kiko.adaptableglyphtoy.demos.GlyphMatrixService
 import com.kiko.adaptableglyphtoy.demos.animation.GlyphMatrixUtils.getNotificationFrame
-import com.kiko.adaptableglyphtoy.demos.animation.Renderers.AudioVisualizerRenderer
-import com.kiko.adaptableglyphtoy.demos.animation.Renderers.ClockRenderer
-import com.kiko.adaptableglyphtoy.demos.animation.Renderers.GameOfLiveRenderer
-import com.kiko.adaptableglyphtoy.demos.animation.Renderers.IFrameRenderer
-import com.kiko.adaptableglyphtoy.demos.animation.Renderers.NotificationTextScrollRenderer
+import com.kiko.adaptableglyphtoy.demos.animation.renderers.AudioVisualizerRenderer
+import com.kiko.adaptableglyphtoy.demos.animation.renderers.ClockRenderer
+import com.kiko.adaptableglyphtoy.demos.animation.renderers.GameOfLiveRenderer
+import com.kiko.adaptableglyphtoy.demos.animation.renderers.IFrameRenderer
+import com.kiko.adaptableglyphtoy.demos.animation.renderers.NotificationTextScrollRenderer
 import com.kiko.adaptableglyphtoy.demos.animation.SettingsConstants.AUDIO_VISUALIZER_ENABLED_SETTING_KEY
 import com.kiko.adaptableglyphtoy.demos.animation.SettingsConstants.AUDIO_VISUALIZER_ROTATION_SETTING_KEY
 import com.kiko.adaptableglyphtoy.demos.animation.SettingsConstants.NOTIFICATION_SCROLL_INCLUDE_BODY_SETTING_KEY
@@ -37,7 +37,6 @@ class ToyAnimationService : GlyphMatrixService("ToyAnimation") {
     companion object {
         private val LOG_TAG = ToyAnimationService::class.java.simpleName
         private const val AUDIO_COOLDOWN_TIME = 2000
-        private const val NOTIFICATION_SCROLL_COOLDOWN_TIME = 30000
 
         const val ACTION_CYCLE_TOY = "com.kiko.adaptableglyphtoy.ACTION_CYCLE_TOY"
         const val ACTION_INTERACT_TOY = "com.kiko.adaptableglyphtoy.ACTION_INTERACT_TOY"
@@ -186,7 +185,7 @@ class ToyAnimationService : GlyphMatrixService("ToyAnimation") {
                             currentNotificationCount > 0
                         ))
                     {
-                        notificationTextScrollRenderer.TryStartScroll({
+                        notificationTextScrollRenderer.tryStartScroll({
                             lastNotificationScrollFinishTime = System.currentTimeMillis()
                         }, notificationBodyEnabled)
                     }
@@ -202,7 +201,7 @@ class ToyAnimationService : GlyphMatrixService("ToyAnimation") {
                 val modifier: IntArray? = if (notificationRingEnabled && currentNotificationCount > 0) getNotificationFrame() else null
                 
                 // Safety check for bound status before rendering
-                glyphMatrixManager?.let { gmm ->
+                glyphMatrixManager.let { gmm ->
                     val frameData = currentFrameRenderer.getFrameData(modifier).build(applicationContext).render()
                     uiScope.launch {
                         gmm.setMatrixFrame(frameData)

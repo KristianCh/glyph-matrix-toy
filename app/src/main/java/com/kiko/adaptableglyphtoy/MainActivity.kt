@@ -65,8 +65,8 @@ import kotlin.math.roundToInt
 
 class MainActivity : ComponentActivity() {
     lateinit var sharedPreferences: SharedPreferences
-    val notificationPermissionsGranted: MutableStateFlow<Boolean> = MutableStateFlow<Boolean> (false)
-    val audioPermissionsGranted: MutableStateFlow<Boolean> = MutableStateFlow<Boolean> (false)
+    val notificationPermissionsGranted: MutableStateFlow<Boolean> = MutableStateFlow(false)
+    val audioPermissionsGranted: MutableStateFlow<Boolean> = MutableStateFlow(false)
 
     override fun onStart() {
         super.onStart()
@@ -224,7 +224,7 @@ class MainActivity : ComponentActivity() {
                             }
 
                             AnimatedVisibility(showNotificationScroll) {
-                                Column() {
+                                Column {
                                     SwitchSetting(
                                         "Include Notification Body in Scrolling Notification",
                                         NOTIFICATION_SCROLL_INCLUDE_BODY_SETTING_KEY,
@@ -249,7 +249,7 @@ class MainActivity : ComponentActivity() {
                                         value = sliderValue,
                                         onValueChange = { newValue ->
                                             sliderValue = newValue
-                                            OnIntValueChanged(
+                                            onIntValueChanged(
                                                 newValue.roundToInt(),
                                                 NOTIFICATION_SCROLL_REPEAT_TIME_SETTING_KEY
                                             )
@@ -286,7 +286,7 @@ class MainActivity : ComponentActivity() {
         Column(modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp)) {
-            Text(text = "${item.title ?: ""}", style = MaterialTheme.typography.bodyLarge)
+            Text(text = item.title ?: "", style = MaterialTheme.typography.bodyLarge)
             Text(text = item.text ?: "", style = MaterialTheme.typography.bodyMedium)
         }
     }
@@ -357,7 +357,7 @@ class MainActivity : ComponentActivity() {
                             selected = selectedOption.value == option,
                             onClick = {
                                 selectedOption.value = option
-                                OnIntValueChanged(selectedOption.value, valueKey)
+                                onIntValueChanged(selectedOption.value, valueKey)
                             }
                         )
                         .padding(horizontal = 16.dp)
@@ -366,7 +366,7 @@ class MainActivity : ComponentActivity() {
                         selected = selectedOption.value == option,
                         onClick = {
                             selectedOption.value = option
-                            OnIntValueChanged(selectedOption.value, valueKey)
+                            onIntValueChanged(selectedOption.value, valueKey)
                         }
                     )
                     Text(texts[option],
@@ -382,7 +382,7 @@ class MainActivity : ComponentActivity() {
         ToyAnimationService.onSettingsUpdated()
     }
 
-    fun OnIntValueChanged(newValue: Int, valueKey: String) {
+    fun onIntValueChanged(newValue: Int, valueKey: String) {
         sharedPreferences.edit { putInt(valueKey, newValue) }
         ToyAnimationService.onSettingsUpdated()
     }

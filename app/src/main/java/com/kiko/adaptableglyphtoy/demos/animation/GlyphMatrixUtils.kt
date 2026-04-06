@@ -7,17 +7,13 @@ import kotlin.math.abs
 object GlyphMatrixUtils {
     const val WIDTH = 13
     const val HEIGHT = 13
-    const val HALF_HEIGHT = HEIGHT.toDouble() / 2
     const val MID_POINT = HEIGHT / 2
-
-    const val CHARACTER_WIDTH = 4
     const val TOP_LINE = 0
     const val MID_LINE = 3
     const val BOTTOM_LINE = 6
-    const val CHARACTER_SEPARATOR_WIDTH = 2
     const val MAX_BRIGHTNESS = 4096
-    private val I = 255
-    private val J = I * 6
+    private const val I = 255
+    private const val J = I * 6
 
     private val notificationFrame = arrayOf(
         0, 0, 0, 0, I, I, I, I, I, 0, 0, 0, 0,
@@ -87,13 +83,13 @@ object GlyphMatrixUtils {
             val e2 = 2 * error
             if (e2 >= dy) {
                 if (x == x1) break
-                error = error + dy
-                x = x + sx
+                error += dy
+                x += sx
             }
             if (e2 <= dx) {
                 if (y == y1) break
-                error = error + dx
-                y = y + sy
+                error += dx
+                y += sy
             }
         }
     }

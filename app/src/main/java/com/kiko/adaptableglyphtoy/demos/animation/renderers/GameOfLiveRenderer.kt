@@ -1,4 +1,4 @@
-package com.kiko.adaptableglyphtoy.demos.animation.Renderers
+package com.kiko.adaptableglyphtoy.demos.animation.renderers
 
 import android.content.Context
 import com.kiko.adaptableglyphtoy.demos.animation.ArrayModifierApplyMode
@@ -14,7 +14,7 @@ import kotlin.random.Random
 class GameOfLiveRenderer: IFrameRenderer {
     var cells = BooleanArray(WIDTH * HEIGHT) { false }
     val cellsNext = BooleanArray(WIDTH * HEIGHT) { false }
-    var cellsDisplay = IntArray(WIDTH * HEIGHT) { 0 }
+    var cellsDisplay = IntArray(WIDTH * HEIGHT)
     var noChangeFrames = 0
     var failed = false
 
@@ -53,7 +53,7 @@ class GameOfLiveRenderer: IFrameRenderer {
                 }
                 val current = getCell(j, i)
                 if (getCell(j, i)) {
-                    if (sum < 2 || sum > 3) {
+                    if (sum !in 2..3) {
                         setCell(cellsNext, j, i, false)
                         noChangeFrames = 0
                     }

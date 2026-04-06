@@ -3,7 +3,7 @@ package com.kiko.adaptableglyphtoy.demos.animation
 import android.content.Context
 import android.view.OrientationEventListener
 
-enum class Orientation(value: Int) {
+enum class Orientation(val value: Int) {
     PORTRAIT_UP(0),
     PORTRAIT_DOWN(180),
     LANDSCAPE_LEFT(90),

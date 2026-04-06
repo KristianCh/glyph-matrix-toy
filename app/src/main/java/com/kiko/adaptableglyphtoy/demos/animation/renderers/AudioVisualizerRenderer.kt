@@ -1,4 +1,4 @@
-package com.kiko.adaptableglyphtoy.demos.animation.Renderers
+package com.kiko.adaptableglyphtoy.demos.animation.renderers
 
 import android.content.Context
 import android.media.audiofx.Visualizer
@@ -34,7 +34,7 @@ class AudioVisualizerRenderer: IFrameRenderer {
     private var lastFft: ByteArray? = null
 
     // 13-band spectrum from FFT (one per grid column), smoothed
-    private val spectrumBands = FloatArray(AUDIO_BANDS) { 0f }
+    private val spectrumBands = FloatArray(AUDIO_BANDS)
     private var audioPresent = false
     private var captureRate = 100
 
@@ -79,7 +79,7 @@ class AudioVisualizerRenderer: IFrameRenderer {
     }
 
     fun setEnabled(audioVisualizerEnabled: Boolean) {
-        visualizer?.setEnabled(audioVisualizerEnabled)
+        visualizer?.enabled = audioVisualizerEnabled
     }
 
     private fun getPixelCoord(band: Int, offset: Int = 0): Int {
@@ -100,14 +100,14 @@ class AudioVisualizerRenderer: IFrameRenderer {
             y -= 6
             // Rotate around origin
             val angle = toRadians(ToyAnimationService.currentAngle.value.toDouble())
-            var x_rot = x * cos(angle) - y * sin(angle)
-            var y_rot = y * cos(angle) + x * sin(angle)
+            var xRot = x * cos(angle) - y * sin(angle)
+            val yRot = y * cos(angle) + x * sin(angle)
             // Translate back from origin
-            x_rot += 6
-            val x_fin = clamp(x_rot.roundToInt(), 0, 12)
-            val y_fin = clamp(y_rot.roundToInt(), -6, 6)
+            xRot += 6
+            val xFin = clamp(xRot.roundToInt(), 0, 12)
+            val yFin = clamp(yRot.roundToInt(), -6, 6)
 
-            return (6 + y_fin) * WIDTH + x_fin
+            return (6 + yFin) * WIDTH + xFin
         }
         return (6 + offset) * WIDTH + band
     }

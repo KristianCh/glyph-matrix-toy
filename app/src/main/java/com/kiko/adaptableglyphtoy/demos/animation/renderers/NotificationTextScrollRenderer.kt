@@ -1,4 +1,4 @@
-package com.kiko.adaptableglyphtoy.demos.animation.Renderers
+package com.kiko.adaptableglyphtoy.demos.animation.renderers
 
 import android.content.Context
 import android.util.Log
@@ -59,7 +59,7 @@ class NotificationTextScrollRenderer : IFrameRenderer {
 
     override fun interact() { }
 
-    fun TryStartScroll(onFinished: () -> Unit, includeBody: Boolean): Boolean {
+    fun tryStartScroll(onFinished: () -> Unit, includeBody: Boolean): Boolean {
         Log.i("NotifTextScrollRenderer", "Try start scroll")
         if (NotificationListener.notifications.value.isEmpty()) {
             currentDisplayText = null
@@ -67,7 +67,7 @@ class NotificationTextScrollRenderer : IFrameRenderer {
             Log.i("NotifTextScrollRenderer", "Failed")
             return false
         }
-        currentDisplayText = getMappedText(createTextFromNotification(NotificationListener.notifications.value.get(0), includeBody))
+        currentDisplayText = getMappedText(createTextFromNotification(NotificationListener.notifications.value[0], includeBody))
         currentDisplayText?.length?.let {
             if (it > 100)
                 currentDisplayText = currentDisplayText?.substring(0, 100)
