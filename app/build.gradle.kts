@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.nothinglondon.sdkdemo"
+    namespace = "com.kiko.adaptableglyphtoy"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.nothinglondon.sdkdemo"
+        applicationId = "com.kiko.adaptableglyphtoy"
         minSdk = 34
         targetSdk = 35
         versionCode = 1
