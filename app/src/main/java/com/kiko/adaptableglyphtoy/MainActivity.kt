@@ -48,7 +48,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
-import com.kiko.adaptableglyphtoy.demos.animation.AnimationDemoService
+import com.kiko.adaptableglyphtoy.demos.animation.ToyAnimationService
 import com.kiko.adaptableglyphtoy.demos.animation.NotificationItem
 import com.kiko.adaptableglyphtoy.demos.animation.NotificationListener
 import com.kiko.adaptableglyphtoy.demos.animation.SettingsConstants.AUDIO_VISUALIZER_ENABLED_SETTING_KEY
@@ -379,11 +379,11 @@ class MainActivity : ComponentActivity() {
 
     fun onBooleanValueChanged(newState: Boolean, valueKey: String) {
         sharedPreferences.edit { putBoolean(valueKey, newState) }
-        AnimationDemoService.onSettingsUpdated()
+        ToyAnimationService.onSettingsUpdated()
     }
 
     fun OnIntValueChanged(newValue: Int, valueKey: String) {
         sharedPreferences.edit { putInt(valueKey, newValue) }
-        AnimationDemoService.onSettingsUpdated()
+        ToyAnimationService.onSettingsUpdated()
     }
 }

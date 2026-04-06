@@ -9,4 +9,5 @@ interface IFrameRenderer {
     fun getFrameData(modifier: IntArray?): GlyphMatrixFrame.Builder
     fun getFrameTime(): Long
     fun canPlay(): Boolean
+    fun interact()
 }

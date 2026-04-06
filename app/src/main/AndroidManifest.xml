@@ -36,7 +36,7 @@
         </activity> <!-- Animation Demo Service -->
 
         <service
-            android:name=".demos.animation.AnimationDemoService"
+            android:name=".demos.animation.ToyAnimationService"
             android:exported="true"
             tools:ignore="ExportedService">
             <intent-filter>

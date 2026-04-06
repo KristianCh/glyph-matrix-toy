@@ -30,8 +30,6 @@ class NotificationTextScrollRenderer : IFrameRenderer {
     override fun getFrameData(modifier: IntArray?): GlyphMatrixFrame.Builder {
         val frameToDraw = GlyphMatrixFrame.Builder()
         if (currentDisplayText != null) {
-
-            Log.i("NotifTextScrollRenderer", "Pos: $textPosition")
             val textObject = GlyphMatrixObject.Builder().setText(currentDisplayText)
                 .setPosition(textPosition, MID_LINE)
                 .setBrightness(255)
@@ -58,6 +56,8 @@ class NotificationTextScrollRenderer : IFrameRenderer {
     override fun canPlay(): Boolean {
         return currentDisplayText != null
     }
+
+    override fun interact() { }
 
     fun TryStartScroll(onFinished: () -> Unit, includeBody: Boolean): Boolean {
         Log.i("NotifTextScrollRenderer", "Try start scroll")

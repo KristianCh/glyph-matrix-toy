@@ -16,6 +16,7 @@ class GameOfLiveRenderer: IFrameRenderer {
     val cellsNext = BooleanArray(WIDTH * HEIGHT) { false }
     var cellsDisplay = IntArray(WIDTH * HEIGHT) { 0 }
     var noChangeFrames = 0
+    var failed = false
 
     override fun initialize(context: Context) {
         initializeInternal()
@@ -26,6 +27,13 @@ class GameOfLiveRenderer: IFrameRenderer {
     }
 
     override fun getFrameData(modifier: IntArray?): GlyphMatrixFrame.Builder {
+        val frameData = GlyphMatrixFrame.Builder()
+        if (noChangeFrames > 10) {
+            failed = true
+            frameData.addTop(applyModifierToArray(crossFrame, modifier, ArrayModifierApplyMode.ADD))
+            return frameData
+        }
+
         noChangeFrames++
         for (i in 0..<HEIGHT) {
             for (j in 0..<WIDTH) {
@@ -60,21 +68,14 @@ class GameOfLiveRenderer: IFrameRenderer {
             }
         }
         cells = cellsNext.clone()
-        val frameData = GlyphMatrixFrame.Builder()
-
-        if (noChangeFrames <= 10) {
-            cellsDisplay = cells.map { c -> if (c) MAX_BRIGHTNESS else 0 }.toIntArray()
-            frameData.addTop(applyModifierToArray(cellsDisplay, modifier, ArrayModifierApplyMode.ADD))
-        }
-        else {
-            frameData.addTop(applyModifierToArray(crossFrame, modifier, ArrayModifierApplyMode.ADD))
-        }
+        cellsDisplay = cells.map { c -> if (c) MAX_BRIGHTNESS else 0 }.toIntArray()
+        frameData.addTop(applyModifierToArray(cellsDisplay, modifier, ArrayModifierApplyMode.ADD))
 
         return frameData
     }
 
     override fun getFrameTime(): Long {
-        if (noChangeFrames > 10) {
+        if (failed) {
             initializeInternal()
             return 1000
         }
@@ -82,6 +83,7 @@ class GameOfLiveRenderer: IFrameRenderer {
     }
 
     private fun initializeInternal() {
+        failed = false
         noChangeFrames = 0
         for (i in 0 ..< HEIGHT) {
             for (j in 0 ..< WIDTH) {
@@ -92,6 +94,10 @@ class GameOfLiveRenderer: IFrameRenderer {
 
     override fun canPlay(): Boolean {
         return true
+    }
+
+    override fun interact() {
+        noChangeFrames = 11
     }
 
     private fun setCell(c: BooleanArray, x: Int, y: Int, value: Boolean) {

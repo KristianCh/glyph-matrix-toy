@@ -59,6 +59,8 @@ class ClockRenderer: IFrameRenderer {
         return true
     }
 
+    override fun interact() { }
+
     private fun formatTime(time: Int): String {
         if (time < 10)
             return "0$time"

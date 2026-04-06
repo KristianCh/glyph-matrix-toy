@@ -4,7 +4,7 @@ import android.content.Context
 import android.media.audiofx.Visualizer
 import android.util.Log
 import androidx.core.math.MathUtils.clamp
-import com.kiko.adaptableglyphtoy.demos.animation.AnimationDemoService
+import com.kiko.adaptableglyphtoy.demos.animation.ToyAnimationService
 import com.kiko.adaptableglyphtoy.demos.animation.ArrayModifierApplyMode
 import com.kiko.adaptableglyphtoy.demos.animation.AudioVisualizerRotationType
 import com.kiko.adaptableglyphtoy.demos.animation.GlyphMatrixUtils.HEIGHT
@@ -84,22 +84,22 @@ class AudioVisualizerRenderer: IFrameRenderer {
 
     private fun getPixelCoord(band: Int, offset: Int = 0): Int {
 
-        if (AnimationDemoService.audioVisualizerRotationType == AudioVisualizerRotationType.Axis) {
-            return when (AnimationDemoService.currentRotation.value) {
+        if (ToyAnimationService.audioVisualizerRotationType == AudioVisualizerRotationType.Axis) {
+            return when (ToyAnimationService.currentRotation.value) {
                 Orientation.LANDSCAPE_LEFT -> (WIDTH - band - 1) * HEIGHT + (HEIGHT - 6 - offset - 1)
                 Orientation.PORTRAIT_DOWN -> (6 + offset) * WIDTH + (WIDTH - band - 1)
                 Orientation.LANDSCAPE_RIGHT -> band * HEIGHT + 6 + offset
                 else -> (6 + offset) * WIDTH + band
             }
         }
-        else if (AnimationDemoService.audioVisualizerRotationType == AudioVisualizerRotationType.Full) {
+        else if (ToyAnimationService.audioVisualizerRotationType == AudioVisualizerRotationType.Full) {
             var x = band
             var y = 6 + offset
             // Translate by center to origin
             x -= 6
             y -= 6
             // Rotate around origin
-            val angle = toRadians(AnimationDemoService.currentAngle.value.toDouble())
+            val angle = toRadians(ToyAnimationService.currentAngle.value.toDouble())
             var x_rot = x * cos(angle) - y * sin(angle)
             var y_rot = y * cos(angle) + x * sin(angle)
             // Translate back from origin
@@ -119,6 +119,8 @@ class AudioVisualizerRenderer: IFrameRenderer {
     override fun canPlay(): Boolean {
         return audioPresent && visualizer?.enabled == true
     }
+
+    override fun interact() { }
 
     private fun initializeVisualizer() {
         try {

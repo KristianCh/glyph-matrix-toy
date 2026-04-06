@@ -45,7 +45,7 @@ abstract class GlyphMatrixService(private val tag: String) : Service() {
     private val serviceMessenger = Messenger(buttonPressedHandler)
 
     var glyphMatrixManager: GlyphMatrixManager? = null
-        private set
+        protected set
 
     private val gmmCallback = object : GlyphMatrixManager.Callback {
         override fun onServiceConnected(p0: ComponentName?) {
@@ -56,7 +56,10 @@ abstract class GlyphMatrixService(private val tag: String) : Service() {
             }
         }
 
-        override fun onServiceDisconnected(p0: ComponentName?) {}
+        override fun onServiceDisconnected(p0: ComponentName?) {
+            Log.d(LOG_TAG, "$tag: onServiceDisconnected")
+            performOnServiceDisconnected(applicationContext)
+        }
     }
 
     final override fun startService(intent: Intent?): ComponentName? {
@@ -66,24 +69,36 @@ abstract class GlyphMatrixService(private val tag: String) : Service() {
 
     final override fun onBind(intent: Intent?): IBinder? {
         Log.d(LOG_TAG, "$tag: onBind")
-        GlyphMatrixManager.getInstance(applicationContext)?.let { gmm ->
-            glyphMatrixManager = gmm
-            gmm.init(gmmCallback)
-            Log.d(LOG_TAG, "$tag: onBind completed")
-        }
+        initManager()
         return serviceMessenger.binder
+    }
+
+    final override fun onRebind(intent: Intent?) {
+        Log.d(LOG_TAG, "$tag: onRebind")
+        initManager()
+        super.onRebind(intent)
+    }
+
+    protected fun initManager() {
+        if (glyphMatrixManager == null) {
+            GlyphMatrixManager.getInstance(applicationContext)?.let { gmm ->
+                glyphMatrixManager = gmm
+                gmm.init(gmmCallback)
+                Log.d(LOG_TAG, "$tag: manager initialized")
+            }
+        }
     }
 
     final override fun onUnbind(intent: Intent?): Boolean {
         Log.d(LOG_TAG, "$tag: onUnbind")
         glyphMatrixManager?.let {
-            Log.d(LOG_TAG, "$tag: onServiceDisconnected")
+            Log.d(LOG_TAG, "$tag: performOnServiceDisconnected via unbind")
             performOnServiceDisconnected(applicationContext)
+            it.turnOff()
+            it.unInit()
         }
-        glyphMatrixManager?.turnOff()
-        glyphMatrixManager?.unInit()
         glyphMatrixManager = null
-        return false
+        return true // Return true to receive onRebind later
     }
 
     open fun performOnServiceConnected(context: Context, glyphMatrixManager: GlyphMatrixManager) {}
@@ -93,6 +108,8 @@ abstract class GlyphMatrixService(private val tag: String) : Service() {
     open fun onTouchPointPressed() {}
     open fun onTouchPointLongPress() {}
     open fun onTouchPointReleased() {}
+
+    protected fun isBound(): Boolean = glyphMatrixManager != null
 
     private companion object {
         private val LOG_TAG = GlyphMatrixService::class.java.simpleName
