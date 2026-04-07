@@ -8,10 +8,8 @@ import com.kiko.adaptableglyphtoy.demos.animation.GlyphMatrixUtils.MID_LINE
 import com.kiko.adaptableglyphtoy.demos.animation.GlyphMatrixUtils.WIDTH
 import com.kiko.adaptableglyphtoy.demos.animation.GlyphMatrixUtils.getMappedText
 import com.kiko.adaptableglyphtoy.demos.animation.GlyphMatrixUtils.getTextLength
-import com.kiko.adaptableglyphtoy.demos.animation.NotificationItem
-import com.kiko.adaptableglyphtoy.demos.animation.NotificationListener
 
-class NotificationTextScrollRenderer : IFrameRenderer {
+class TextScrollRenderer : IFrameRenderer {
     companion object {
         private const val BASE_POSITION = WIDTH + 4
     }
@@ -41,7 +39,7 @@ class NotificationTextScrollRenderer : IFrameRenderer {
             textPosition --
         }
         else {
-            Log.i("NotifTextScrollRenderer", "Finished scroll")
+            Log.i("TextScrollRenderer", "Finished scroll")
             onFinishedCallback?.invoke()
             clear()
         }
@@ -59,15 +57,10 @@ class NotificationTextScrollRenderer : IFrameRenderer {
 
     override fun interact() { }
 
-    fun tryStartScroll(onFinished: () -> Unit, includeBody: Boolean): Boolean {
-        Log.i("NotifTextScrollRenderer", "Try start scroll")
-        if (NotificationListener.notifications.value.isEmpty()) {
-            currentDisplayText = null
+    fun tryStartScroll(string: String, onFinished: () -> Unit): Boolean {
+        Log.i("TextScrollRenderer", "Try start scroll")
 
-            Log.i("NotifTextScrollRenderer", "Failed")
-            return false
-        }
-        currentDisplayText = getMappedText(createTextFromNotification(NotificationListener.notifications.value[0], includeBody))
+        currentDisplayText = getMappedText(string)
         currentDisplayText?.length?.let {
             if (it > 100)
                 currentDisplayText = currentDisplayText?.substring(0, 100)
@@ -76,16 +69,9 @@ class NotificationTextScrollRenderer : IFrameRenderer {
         onFinishedCallback = onFinished
         textPosition = BASE_POSITION
 
-        Log.i("NotifTextScrollRenderer", "L: $textLength T: $currentDisplayText")
+        Log.i("TextScrollRenderer", "L: $textLength T: $currentDisplayText")
 
         return true
-    }
-
-    fun createTextFromNotification(notification: NotificationItem, includeBody: Boolean): String {
-        val name = notification.title ?: "???"
-        if (!includeBody) return name
-        val text = notification.text ?: "???"
-        return "$name: $text"
     }
 
     fun clear() {

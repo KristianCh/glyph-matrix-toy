@@ -11,7 +11,7 @@ import com.nothing.ketchum.GlyphMatrixFrame
 import kotlin.collections.toIntArray
 import kotlin.random.Random
 
-class GameOfLiveRenderer: IFrameRenderer {
+class GameOfLifeRenderer: IFrameRenderer {
     var cells = BooleanArray(WIDTH * HEIGHT) { false }
     val cellsNext = BooleanArray(WIDTH * HEIGHT) { false }
     var cellsDisplay = IntArray(WIDTH * HEIGHT)

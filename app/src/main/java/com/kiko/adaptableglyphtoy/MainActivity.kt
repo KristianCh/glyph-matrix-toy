@@ -379,11 +379,9 @@ class MainActivity : ComponentActivity() {
 
     fun onBooleanValueChanged(newState: Boolean, valueKey: String) {
         sharedPreferences.edit { putBoolean(valueKey, newState) }
-        ToyAnimationService.onSettingsUpdated()
     }
 
     fun onIntValueChanged(newValue: Int, valueKey: String) {
         sharedPreferences.edit { putInt(valueKey, newValue) }
-        ToyAnimationService.onSettingsUpdated()
     }
 }

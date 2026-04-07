@@ -2,6 +2,8 @@ package com.kiko.adaptableglyphtoy.demos.animation
 
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
+import android.util.Log
+import com.kiko.adaptableglyphtoy.demos.animation.GlyphMatrixUtils.getMappedText
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -15,6 +17,25 @@ class NotificationListener : NotificationListenerService() {
     companion object {
         private val _notifications = MutableStateFlow<List<NotificationItem>>(emptyList())
         val notifications: StateFlow<List<NotificationItem>> = _notifications
+
+        fun mostRecentNotificationString(includeBody: Boolean): String? {
+            if (notifications.value.isEmpty()) {
+                return null
+            }
+            var outString = getMappedText(createTextFromNotification(notifications.value[0], includeBody))
+            outString.length.let {
+                if (it > 100)
+                    outString = outString.substring(0, 100)
+            }
+            return outString
+        }
+
+        private fun createTextFromNotification(notification: NotificationItem, includeBody: Boolean): String {
+            val name = notification.title ?: "???"
+            if (!includeBody) return name
+            val text = notification.text ?: "???"
+            return "$name: $text"
+        }
     }
 
     override fun onListenerConnected() {
