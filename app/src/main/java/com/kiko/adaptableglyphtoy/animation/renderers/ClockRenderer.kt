@@ -8,6 +8,7 @@ import com.kiko.adaptableglyphtoy.animation.GlyphMatrixUtils.TOP_LINE
 import com.kiko.adaptableglyphtoy.animation.GlyphMatrixUtils.WIDTH
 import com.kiko.adaptableglyphtoy.animation.GlyphMatrixUtils.applyModifierToArray
 import com.kiko.adaptableglyphtoy.animation.GlyphMatrixUtils.drawLine
+import com.kiko.adaptableglyphtoy.animation.GlyphMatrixUtils.formatTime
 import com.kiko.adaptableglyphtoy.animation.GlyphMatrixUtils.getCenteredTextX
 import com.nothing.ketchum.GlyphMatrixFrame
 import com.nothing.ketchum.GlyphMatrixObject
@@ -56,12 +57,6 @@ class ClockRenderer: IFrameRenderer {
     }
 
     override fun interact() { }
-
-    private fun formatTime(time: Int): String {
-        if (time < 10)
-            return "0$time"
-        return time.toString()
-    }
 
     private fun getSecondsArray(seconds: Int): IntArray {
         val grid = Array(HEIGHT * WIDTH) { 0 }.toIntArray()

@@ -52,6 +52,7 @@ import com.kiko.adaptableglyphtoy.animation.NotificationItem
 import com.kiko.adaptableglyphtoy.animation.NotificationListener
 import com.kiko.adaptableglyphtoy.animation.SettingsConstants.AUDIO_VISUALIZER_ENABLED_SETTING_KEY
 import com.kiko.adaptableglyphtoy.animation.SettingsConstants.AUDIO_VISUALIZER_ROTATION_SETTING_KEY
+import com.kiko.adaptableglyphtoy.animation.SettingsConstants.BATTERY_DISPLAY_ENABLED_SETTING_KEY
 import com.kiko.adaptableglyphtoy.animation.SettingsConstants.NOTIFICATION_SCROLL_INCLUDE_BODY_SETTING_KEY
 import com.kiko.adaptableglyphtoy.animation.SettingsConstants.NOTIFICATION_SCROLL_REPEAT_TIME_SETTING_KEY
 import com.kiko.adaptableglyphtoy.animation.SettingsConstants.PRIMARY_TOY_SETTING_KEY
@@ -157,6 +158,14 @@ class MainActivity : ComponentActivity() {
                     )
                         Text("Primary Toy", style = MaterialTheme.typography.titleMedium)
                         PrimaryToySelectRadioButton()
+
+                        SwitchSetting(
+                            "Show Battery Level when Charging",
+                            BATTERY_DISPLAY_ENABLED_SETTING_KEY,
+                            ::onBooleanValueChanged,
+                            true
+                        )
+
                         Text(
                             "Playing Media Settings",
                             style = MaterialTheme.typography.titleMedium
@@ -167,10 +176,9 @@ class MainActivity : ComponentActivity() {
                             SwitchSetting(
                                 "Show Audio Visualizer",
                                 AUDIO_VISUALIZER_ENABLED_SETTING_KEY,
-                            ) { newValue, key ->
+                             { newValue, key ->
                                 showAudioVisualizer = newValue
-                                onBooleanValueChanged(newValue, key)
-                            }
+                                onBooleanValueChanged(newValue, key) })
 
                             AnimatedVisibility(showAudioVisualizer) {
                                 Column {
@@ -226,10 +234,9 @@ class MainActivity : ComponentActivity() {
                             SwitchSetting(
                                 "Show Scrolling Notification Text",
                                 SHOW_NOTIFICATION_SCROLL_SETTING_KEY,
-                            ) { newValue, key ->
+                                { newValue, key ->
                                 showNotificationScroll = newValue
-                                onBooleanValueChanged(newValue, key)
-                            }
+                                onBooleanValueChanged(newValue, key)})
 
                             AnimatedVisibility(showNotificationScroll) {
                                 Column {
@@ -285,8 +292,8 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    fun SwitchSetting(text: String, valueKey: String, actionOnChanged: (Boolean, String) -> Unit) {
-        val (checkedState, onStateChange) = remember { mutableStateOf(sharedPreferences.getBoolean(valueKey, false)) }
+    fun SwitchSetting(text: String, valueKey: String, actionOnChanged: (Boolean, String) -> Unit, default: Boolean = false) {
+        val (checkedState, onStateChange) = remember { mutableStateOf(sharedPreferences.getBoolean(valueKey, default)) }
         val interactionSource = remember { MutableInteractionSource() }
         Row(
             Modifier

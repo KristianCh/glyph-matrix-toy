@@ -63,6 +63,22 @@ object GlyphMatrixUtils {
         J, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, J,
     ).toIntArray()
 
+    val batteryFrame = arrayOf(
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, J, J, J, 0, 0, 0, 0, 0,
+        0, 0, 0, J, J, J, 0, J, J, J, 0, 0, 0,
+        0, 0, 0, J, 0, 0, 0, 0, 0, J, 0, 0, 0,
+        0, 0, 0, J, 0, 0, 0, 0, 0, J, 0, 0, 0,
+        0, 0, 0, J, 0, 0, 0, 0, 0, J, 0, 0, 0,
+        0, 0, 0, J, 0, 0, 0, 0, 0, J, 0, 0, 0,
+        0, 0, 0, J, 0, 0, 0, 0, 0, J, 0, 0, 0,
+        0, 0, 0, J, 0, 0, 0, 0, 0, J, 0, 0, 0,
+        0, 0, 0, J, 0, 0, 0, 0, 0, J, 0, 0, 0,
+        0, 0, 0, J, J, J, J, J, J, J, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    ).toIntArray()
+
     fun getNotificationFrame(): IntArray {
         val second = LocalDateTime.now().second
         return if (second % 2 != 0) notificationFrame else notificationFrame2
@@ -148,5 +164,11 @@ object GlyphMatrixUtils {
             '.', ',', ':', ' ', '!' -> 1
             else -> 0
         }
+    }
+
+    fun formatTime(time: Int): String {
+        if (time < 10)
+            return "0$time"
+        return time.toString()
     }
 }

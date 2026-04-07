@@ -167,8 +167,7 @@ class AudioVisualizerRenderer: IFrameRenderer {
                 vis.enabled = true
                 visualizer = vis
                 isVisualizerEnabled = true
-                Log.i("Visualizer", "Visualizer initialized successfully")
-                Log.i("Visualizer", (captureRate).toString())
+                Log.i("Visualizer", "Visualizer initialized successfully at capture rate: $captureRate")
             }
         } catch (e: Exception) {
             Log.w("Visualizer", "Failed to initialize Visualizer: ${e.message}")

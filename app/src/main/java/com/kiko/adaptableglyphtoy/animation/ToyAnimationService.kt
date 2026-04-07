@@ -6,13 +6,19 @@ import android.hardware.SensorManager.SENSOR_DELAY_NORMAL
 import android.hardware.SensorManager.SENSOR_DELAY_UI
 import android.media.session.MediaSessionManager
 import android.media.session.PlaybackState
+import android.os.BatteryManager
 import android.util.Log
 import com.nothing.ketchum.GlyphMatrixManager
 import com.kiko.adaptableglyphtoy.GlyphMatrixService
 import com.kiko.adaptableglyphtoy.animation.GlyphMatrixUtils.BOTTOM_LINE
+import com.kiko.adaptableglyphtoy.animation.GlyphMatrixUtils.MID_LINE
+import com.kiko.adaptableglyphtoy.animation.GlyphMatrixUtils.TOP_LINE
+import com.kiko.adaptableglyphtoy.animation.GlyphMatrixUtils.applyModifierToArray
+import com.kiko.adaptableglyphtoy.animation.GlyphMatrixUtils.batteryFrame
 import com.kiko.adaptableglyphtoy.animation.GlyphMatrixUtils.getCenteredTextX
 import com.kiko.adaptableglyphtoy.animation.GlyphMatrixUtils.getNotificationFrame
 import com.kiko.adaptableglyphtoy.animation.renderers.AudioVisualizerRenderer
+import com.kiko.adaptableglyphtoy.animation.renderers.BatteryInfoRenderer
 import com.kiko.adaptableglyphtoy.animation.renderers.ClockRenderer
 import com.kiko.adaptableglyphtoy.animation.renderers.GameOfLifeRenderer
 import com.kiko.adaptableglyphtoy.animation.renderers.IFrameRenderer
@@ -43,6 +49,7 @@ class ToyAnimationService : GlyphMatrixService("ToyAnimation") {
         private val _currentAngle = MutableStateFlow(0)
         val currentAngle: StateFlow<Int> = _currentAngle
         var audioVisualizerRotationType = AudioVisualizerRotationType.Axis
+        lateinit var batteryManager: BatteryManager
     }
 
     private var backgroundScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -55,10 +62,10 @@ class ToyAnimationService : GlyphMatrixService("ToyAnimation") {
     private val gameOfLifeRenderer = GameOfLifeRenderer()
     private val audioVisualizerRenderer = AudioVisualizerRenderer()
     private val textScrollRenderer = TextScrollRenderer()
+    private val batteryInfoRenderer = BatteryInfoRenderer()
 
     private var orientationListenerUI: OrientationListener? = null
     private var orientationListenerGame: OrientationListener? = null
-
     private lateinit var settings: SettingsRepository
     private var currentPrimaryToy = PrimaryToy.Clock
     private var audioVisualizerEnabled = false
@@ -68,6 +75,7 @@ class ToyAnimationService : GlyphMatrixService("ToyAnimation") {
     private var notificationScrollEnabled = false
     private var notificationBodyEnabled = false
     private var notificationScrollCooldown = 0
+    private var batteryDisplayEnabled = true
 
     // Coordination state
     private var lastAudioTime: Long = System.currentTimeMillis()
@@ -78,6 +86,7 @@ class ToyAnimationService : GlyphMatrixService("ToyAnimation") {
     override fun onCreate() {
         super.onCreate()
         settings = SettingsRepository(this)
+        batteryManager = applicationContext.getSystemService(BATTERY_SERVICE) as BatteryManager
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -113,6 +122,7 @@ class ToyAnimationService : GlyphMatrixService("ToyAnimation") {
         clockRenderer.initialize(this)
         gameOfLifeRenderer.initialize(this)
         textScrollRenderer.initialize(this)
+        batteryInfoRenderer.initialize(this)
 
         // 2. Setup Sensors
         setupOrientationListeners()
@@ -192,19 +202,28 @@ class ToyAnimationService : GlyphMatrixService("ToyAnimation") {
                 }
             }
         }
+        launch { settings.batteryDisplayEnabled.collect { batteryDisplayEnabled = it } }
     }
 
     private suspend fun CoroutineScope.runAnimationLoop(gmm: GlyphMatrixManager) {
         Log.i(LOG_TAG, "Starting animation loop")
         while (isActive) {
+            var usePrimary = true
+
             val currentTimeMillis = System.currentTimeMillis()
-            currentFrameRenderer = getPrimaryFrameRenderer()
+
+            // Battery priority
+            if (batteryDisplayEnabled && batteryInfoRenderer.canPlay()) {
+                usePrimary = false
+                currentFrameRenderer = batteryInfoRenderer
+            }
 
             // Audio priority
             val audioPresent = audioVisualizerRenderer.canPlay()
 
             if (audioVisualizerEnabled && (audioPresent || currentTimeMillis - lastAudioTime < AUDIO_COOLDOWN_TIME)) {
                 if (audioPresent) lastAudioTime = currentTimeMillis
+                usePrimary = false
                 currentFrameRenderer = audioVisualizerRenderer
             }
             if (audioPresent)
@@ -213,11 +232,14 @@ class ToyAnimationService : GlyphMatrixService("ToyAnimation") {
             // Notification priority
             handleNotifications(currentTimeMillis)
             if (textScrollRenderer.canPlay()) {
+                usePrimary = false
                 currentFrameRenderer = textScrollRenderer
             }
 
             // Render Frame
             val modifier = if (notificationRingEnabled && lastNotificationCount > 0) getNotificationFrame() else null
+            if (usePrimary)
+                currentFrameRenderer = getPrimaryFrameRenderer()
             
             try {
                 val frameData = currentFrameRenderer.getFrameData(modifier).build(applicationContext).render()
@@ -291,6 +313,12 @@ class ToyAnimationService : GlyphMatrixService("ToyAnimation") {
         connectionJob?.cancel() // Cancels settings observation AND animation loop
         orientationListenerUI?.disable()
         orientationListenerGame?.disable()
+
+        batteryInfoRenderer.dispose()
+        audioVisualizerRenderer.dispose()
+        clockRenderer.dispose()
+        gameOfLifeRenderer.dispose()
+        textScrollRenderer.dispose()
     }
 
     override fun onDestroy() {
