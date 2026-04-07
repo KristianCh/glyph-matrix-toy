@@ -1,12 +1,12 @@
-package com.kiko.adaptableglyphtoy.demos.animation.renderers
+package com.kiko.adaptableglyphtoy.animation.renderers
 
 import android.content.Context
-import com.kiko.adaptableglyphtoy.demos.animation.ArrayModifierApplyMode
-import com.kiko.adaptableglyphtoy.demos.animation.GlyphMatrixUtils.HEIGHT
-import com.kiko.adaptableglyphtoy.demos.animation.GlyphMatrixUtils.MAX_BRIGHTNESS
-import com.kiko.adaptableglyphtoy.demos.animation.GlyphMatrixUtils.WIDTH
-import com.kiko.adaptableglyphtoy.demos.animation.GlyphMatrixUtils.applyModifierToArray
-import com.kiko.adaptableglyphtoy.demos.animation.GlyphMatrixUtils.crossFrame
+import com.kiko.adaptableglyphtoy.animation.ArrayModifierApplyMode
+import com.kiko.adaptableglyphtoy.animation.GlyphMatrixUtils.HEIGHT
+import com.kiko.adaptableglyphtoy.animation.GlyphMatrixUtils.MAX_BRIGHTNESS
+import com.kiko.adaptableglyphtoy.animation.GlyphMatrixUtils.WIDTH
+import com.kiko.adaptableglyphtoy.animation.GlyphMatrixUtils.applyModifierToArray
+import com.kiko.adaptableglyphtoy.animation.GlyphMatrixUtils.crossFrame
 import com.nothing.ketchum.GlyphMatrixFrame
 import kotlin.collections.toIntArray
 import kotlin.random.Random

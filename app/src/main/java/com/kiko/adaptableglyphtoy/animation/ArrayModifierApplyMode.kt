@@ -1,4 +1,4 @@
-package com.kiko.adaptableglyphtoy.demos.animation
+package com.kiko.adaptableglyphtoy.animation
 
 enum class ArrayModifierApplyMode {
     ADD,

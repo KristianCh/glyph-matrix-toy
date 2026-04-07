@@ -1,11 +1,18 @@
-package com.kiko.adaptableglyphtoy.demos.animation
+package com.kiko.adaptableglyphtoy.animation
 
+import android.content.ComponentName
+import android.content.Context
+import android.graphics.Bitmap
+import android.media.MediaMetadata
+import android.media.session.MediaController
+import android.media.session.MediaSessionManager
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Log
-import com.kiko.adaptableglyphtoy.demos.animation.GlyphMatrixUtils.getMappedText
+import com.kiko.adaptableglyphtoy.animation.GlyphMatrixUtils.getMappedText
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collect
 
 data class NotificationItem(
     val appName: String,
@@ -17,6 +24,14 @@ class NotificationListener : NotificationListenerService() {
     companion object {
         private val _notifications = MutableStateFlow<List<NotificationItem>>(emptyList())
         val notifications: StateFlow<List<NotificationItem>> = _notifications
+
+        private val _songInfoFlow: MutableStateFlow<String> = MutableStateFlow("")
+        val songInfoFlow: StateFlow<String> = _songInfoFlow
+        private val _albumArtFlow: MutableStateFlow<Bitmap?> = MutableStateFlow(null)
+        val albumArtFlow: StateFlow<Bitmap?> = _albumArtFlow
+
+        private val _mediaPlaybackStateFlow: MutableStateFlow<Int> = MutableStateFlow(0)
+        val mediaPlaybackStateFlow: StateFlow<Int> = _mediaPlaybackStateFlow
 
         fun mostRecentNotificationString(includeBody: Boolean): String? {
             if (notifications.value.isEmpty()) {
@@ -38,8 +53,53 @@ class NotificationListener : NotificationListenerService() {
         }
     }
 
+    private lateinit var mediaSessionManager: MediaSessionManager
+    private val mediaControllerCallback: MediaControllerCallback = MediaControllerCallback()
+    private var mediaControllers: List<MediaController> = emptyList()
+
+    private val sessionsListener =
+        MediaSessionManager.OnActiveSessionsChangedListener { controllers ->
+            handleControllers(controllers)
+            Log.d("MediaSession", "SessionsChanged")
+        }
+
+    private fun handleControllers(controllers: List<MediaController>?) {
+        Log.i("MediaSession", "Controllers: ${mediaControllers.size}")
+        controllers?.forEach { controller ->
+            controller.unregisterCallback(mediaControllerCallback)
+            controller.registerCallback(mediaControllerCallback)
+        }
+        mediaControllers = controllers ?: emptyList()
+    }
+
     override fun onListenerConnected() {
+        super.onListenerConnected()
         loadActiveNotifications()
+
+        mediaSessionManager = getSystemService(MEDIA_SESSION_SERVICE) as MediaSessionManager
+
+        val componentName = ComponentName(this, javaClass)
+
+        mediaSessionManager.addOnActiveSessionsChangedListener(
+            sessionsListener,
+            componentName
+        )
+
+        // Initial fetch
+        handleControllers(mediaSessionManager.getActiveSessions(componentName))
+        mediaControllerCallback.setCallback(::onMediaChanged)
+    }
+
+    override fun onListenerDisconnected() {
+        super.onListenerDisconnected()
+        mediaSessionManager.removeOnActiveSessionsChangedListener(sessionsListener)
+    }
+
+
+    private fun onMediaChanged() {
+        _songInfoFlow.value = mediaControllerCallback.songInfo
+        _albumArtFlow.value = mediaControllerCallback.albumArt
+        _mediaPlaybackStateFlow.value = mediaControllerCallback.playbackState
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {

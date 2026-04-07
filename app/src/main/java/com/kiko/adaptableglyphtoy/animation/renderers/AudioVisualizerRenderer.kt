@@ -1,17 +1,17 @@
-package com.kiko.adaptableglyphtoy.demos.animation.renderers
+package com.kiko.adaptableglyphtoy.animation.renderers
 
 import android.content.Context
 import android.media.audiofx.Visualizer
 import android.util.Log
 import androidx.core.math.MathUtils.clamp
-import com.kiko.adaptableglyphtoy.demos.animation.ToyAnimationService
-import com.kiko.adaptableglyphtoy.demos.animation.ArrayModifierApplyMode
-import com.kiko.adaptableglyphtoy.demos.animation.AudioVisualizerRotationType
-import com.kiko.adaptableglyphtoy.demos.animation.GlyphMatrixUtils.HEIGHT
-import com.kiko.adaptableglyphtoy.demos.animation.GlyphMatrixUtils.MAX_BRIGHTNESS
-import com.kiko.adaptableglyphtoy.demos.animation.GlyphMatrixUtils.WIDTH
-import com.kiko.adaptableglyphtoy.demos.animation.GlyphMatrixUtils.applyModifierToArray
-import com.kiko.adaptableglyphtoy.demos.animation.Orientation
+import com.kiko.adaptableglyphtoy.animation.ToyAnimationService
+import com.kiko.adaptableglyphtoy.animation.ArrayModifierApplyMode
+import com.kiko.adaptableglyphtoy.animation.AudioVisualizerRotationType
+import com.kiko.adaptableglyphtoy.animation.GlyphMatrixUtils.HEIGHT
+import com.kiko.adaptableglyphtoy.animation.GlyphMatrixUtils.MAX_BRIGHTNESS
+import com.kiko.adaptableglyphtoy.animation.GlyphMatrixUtils.WIDTH
+import com.kiko.adaptableglyphtoy.animation.GlyphMatrixUtils.applyModifierToArray
+import com.kiko.adaptableglyphtoy.animation.Orientation
 import com.nothing.ketchum.GlyphMatrixFrame
 import java.lang.Math.toRadians
 import kotlin.math.cos

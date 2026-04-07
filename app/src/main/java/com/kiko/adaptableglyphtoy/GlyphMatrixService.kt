@@ -1,4 +1,4 @@
-package com.kiko.adaptableglyphtoy.demos
+package com.kiko.adaptableglyphtoy
 
 import android.app.Service
 import android.content.ComponentName

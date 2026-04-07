@@ -1,16 +1,17 @@
-package com.kiko.adaptableglyphtoy.demos.animation
+package com.kiko.adaptableglyphtoy.animation
 
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
-import com.kiko.adaptableglyphtoy.demos.animation.SettingsConstants.AUDIO_VISUALIZER_ENABLED_SETTING_KEY
-import com.kiko.adaptableglyphtoy.demos.animation.SettingsConstants.AUDIO_VISUALIZER_ROTATION_SETTING_KEY
-import com.kiko.adaptableglyphtoy.demos.animation.SettingsConstants.NOTIFICATION_SCROLL_INCLUDE_BODY_SETTING_KEY
-import com.kiko.adaptableglyphtoy.demos.animation.SettingsConstants.NOTIFICATION_SCROLL_REPEAT_TIME_SETTING_KEY
-import com.kiko.adaptableglyphtoy.demos.animation.SettingsConstants.PRIMARY_TOY_SETTING_KEY
-import com.kiko.adaptableglyphtoy.demos.animation.SettingsConstants.SETTINGS_PREFERENCES_NAME
-import com.kiko.adaptableglyphtoy.demos.animation.SettingsConstants.SHOW_NOTIFICATION_RING_SETTING_KEY
-import com.kiko.adaptableglyphtoy.demos.animation.SettingsConstants.SHOW_NOTIFICATION_SCROLL_SETTING_KEY
+import com.kiko.adaptableglyphtoy.animation.SettingsConstants.AUDIO_VISUALIZER_ENABLED_SETTING_KEY
+import com.kiko.adaptableglyphtoy.animation.SettingsConstants.AUDIO_VISUALIZER_ROTATION_SETTING_KEY
+import com.kiko.adaptableglyphtoy.animation.SettingsConstants.NOTIFICATION_SCROLL_INCLUDE_BODY_SETTING_KEY
+import com.kiko.adaptableglyphtoy.animation.SettingsConstants.NOTIFICATION_SCROLL_REPEAT_TIME_SETTING_KEY
+import com.kiko.adaptableglyphtoy.animation.SettingsConstants.PRIMARY_TOY_SETTING_KEY
+import com.kiko.adaptableglyphtoy.animation.SettingsConstants.SETTINGS_PREFERENCES_NAME
+import com.kiko.adaptableglyphtoy.animation.SettingsConstants.SHOW_MEDIA_SCROLL_SETTING_KEY
+import com.kiko.adaptableglyphtoy.animation.SettingsConstants.SHOW_NOTIFICATION_RING_SETTING_KEY
+import com.kiko.adaptableglyphtoy.animation.SettingsConstants.SHOW_NOTIFICATION_SCROLL_SETTING_KEY
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -43,6 +44,10 @@ class SettingsRepository(context: Context) {
         sharedPreferences.getInt(k, d)
     }
 
+    val mediaScrollEnabled: Flow<Boolean> = preferenceFlow(SHOW_MEDIA_SCROLL_SETTING_KEY, false) { k, d ->
+        sharedPreferences.getBoolean(k, d)
+    }
+
     val notificationRingEnabled: Flow<Boolean> = preferenceFlow(SHOW_NOTIFICATION_RING_SETTING_KEY, false) { k, d ->
         sharedPreferences.getBoolean(k, d)
     }
@@ -62,6 +67,7 @@ class SettingsRepository(context: Context) {
     fun setPrimaryToy(toy: Int) = sharedPreferences.edit { putInt(PRIMARY_TOY_SETTING_KEY, toy) }
     fun setAudioVisualizerEnabled(enabled: Boolean) = sharedPreferences.edit { putBoolean(AUDIO_VISUALIZER_ENABLED_SETTING_KEY, enabled) }
     fun setAudioVisualizerRotationType(type: Int) = sharedPreferences.edit { putInt(AUDIO_VISUALIZER_ROTATION_SETTING_KEY, type) }
+    fun setMediaScrollEnabled(enabled: Boolean) = sharedPreferences.edit { putBoolean(SHOW_MEDIA_SCROLL_SETTING_KEY, enabled) }
     fun setNotificationRingEnabled(enabled: Boolean) = sharedPreferences.edit { putBoolean(SHOW_NOTIFICATION_RING_SETTING_KEY, enabled) }
     fun setNotificationScrollEnabled(enabled: Boolean) = sharedPreferences.edit { putBoolean(SHOW_NOTIFICATION_SCROLL_SETTING_KEY, enabled) }
     fun setNotificationBodyEnabled(enabled: Boolean) = sharedPreferences.edit { putBoolean(NOTIFICATION_SCROLL_INCLUDE_BODY_SETTING_KEY, enabled) }
@@ -71,6 +77,7 @@ class SettingsRepository(context: Context) {
     fun getPrimaryToy() = sharedPreferences.getInt(PRIMARY_TOY_SETTING_KEY, 0)
     fun isAudioVisualizerEnabled() = sharedPreferences.getBoolean(AUDIO_VISUALIZER_ENABLED_SETTING_KEY, false)
     fun getAudioVisualizerRotationType() = sharedPreferences.getInt(AUDIO_VISUALIZER_ROTATION_SETTING_KEY, 0)
+    fun isMediaScrollEnabled() = sharedPreferences.getBoolean(SHOW_MEDIA_SCROLL_SETTING_KEY, false)
     fun isNotificationRingEnabled() = sharedPreferences.getBoolean(SHOW_NOTIFICATION_RING_SETTING_KEY, false)
     fun isNotificationScrollEnabled() = sharedPreferences.getBoolean(SHOW_NOTIFICATION_SCROLL_SETTING_KEY, false)
     fun isNotificationBodyEnabled() = sharedPreferences.getBoolean(NOTIFICATION_SCROLL_INCLUDE_BODY_SETTING_KEY, false)

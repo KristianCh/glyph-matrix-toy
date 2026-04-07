@@ -1,18 +1,24 @@
-package com.kiko.adaptableglyphtoy.demos.animation
+package com.kiko.adaptableglyphtoy.animation
 
 import android.content.Context
 import android.content.Intent
 import android.hardware.SensorManager.SENSOR_DELAY_NORMAL
 import android.hardware.SensorManager.SENSOR_DELAY_UI
+import android.media.session.MediaSessionManager
+import android.media.session.PlaybackState
 import android.util.Log
 import com.nothing.ketchum.GlyphMatrixManager
-import com.kiko.adaptableglyphtoy.demos.GlyphMatrixService
-import com.kiko.adaptableglyphtoy.demos.animation.GlyphMatrixUtils.getNotificationFrame
-import com.kiko.adaptableglyphtoy.demos.animation.renderers.AudioVisualizerRenderer
-import com.kiko.adaptableglyphtoy.demos.animation.renderers.ClockRenderer
-import com.kiko.adaptableglyphtoy.demos.animation.renderers.GameOfLifeRenderer
-import com.kiko.adaptableglyphtoy.demos.animation.renderers.IFrameRenderer
-import com.kiko.adaptableglyphtoy.demos.animation.renderers.TextScrollRenderer
+import com.kiko.adaptableglyphtoy.GlyphMatrixService
+import com.kiko.adaptableglyphtoy.animation.GlyphMatrixUtils.BOTTOM_LINE
+import com.kiko.adaptableglyphtoy.animation.GlyphMatrixUtils.getCenteredTextX
+import com.kiko.adaptableglyphtoy.animation.GlyphMatrixUtils.getNotificationFrame
+import com.kiko.adaptableglyphtoy.animation.renderers.AudioVisualizerRenderer
+import com.kiko.adaptableglyphtoy.animation.renderers.ClockRenderer
+import com.kiko.adaptableglyphtoy.animation.renderers.GameOfLifeRenderer
+import com.kiko.adaptableglyphtoy.animation.renderers.IFrameRenderer
+import com.kiko.adaptableglyphtoy.animation.renderers.TextScrollRenderer
+import com.nothing.ketchum.GlyphMatrixFrame
+import com.nothing.ketchum.GlyphMatrixObject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -48,7 +54,7 @@ class ToyAnimationService : GlyphMatrixService("ToyAnimation") {
     private val clockRenderer = ClockRenderer()
     private val gameOfLifeRenderer = GameOfLifeRenderer()
     private val audioVisualizerRenderer = AudioVisualizerRenderer()
-    private val notificationTextScrollRenderer = TextScrollRenderer()
+    private val textScrollRenderer = TextScrollRenderer()
 
     private var orientationListenerUI: OrientationListener? = null
     private var orientationListenerGame: OrientationListener? = null
@@ -56,6 +62,7 @@ class ToyAnimationService : GlyphMatrixService("ToyAnimation") {
     private lateinit var settings: SettingsRepository
     private var currentPrimaryToy = PrimaryToy.Clock
     private var audioVisualizerEnabled = false
+    private var mediaScrollEnabled = false
     private var currentFrameRenderer: IFrameRenderer = clockRenderer
     private var notificationRingEnabled = false
     private var notificationScrollEnabled = false
@@ -64,6 +71,7 @@ class ToyAnimationService : GlyphMatrixService("ToyAnimation") {
 
     // Coordination state
     private var lastAudioTime: Long = System.currentTimeMillis()
+    private var isScrollingMediaInfo = false
     private var lastNotificationCount = 0
     private var lastNotificationScrollFinishTime: Long = System.currentTimeMillis()
 
@@ -78,7 +86,7 @@ class ToyAnimationService : GlyphMatrixService("ToyAnimation") {
                 cyclePrimaryToy()
                 if (glyphMatrixManager == null) initManager()
             }
-            ACTION_INTERACT_TOY -> interactWithPrimaryToy()
+            ACTION_INTERACT_TOY -> interactWithToy()
         }
         return super.onStartCommand(intent, flags, startId)
     }
@@ -89,9 +97,9 @@ class ToyAnimationService : GlyphMatrixService("ToyAnimation") {
         Log.i(LOG_TAG, "Cycled toy to: $nextToy")
     }
 
-    private fun interactWithPrimaryToy() {
+    private fun interactWithToy() {
         currentFrameRenderer.interact()
-        Log.i(LOG_TAG, "Interacted with toy: $currentPrimaryToy")
+        Log.i(LOG_TAG, "Interacted with: ${currentFrameRenderer::class.java.simpleName}")
     }
 
     override fun performOnServiceConnected(
@@ -104,7 +112,7 @@ class ToyAnimationService : GlyphMatrixService("ToyAnimation") {
         audioVisualizerRenderer.initialize(this)
         clockRenderer.initialize(this)
         gameOfLifeRenderer.initialize(this)
-        notificationTextScrollRenderer.initialize(this)
+        textScrollRenderer.initialize(this)
 
         // 2. Setup Sensors
         setupOrientationListeners()
@@ -131,7 +139,6 @@ class ToyAnimationService : GlyphMatrixService("ToyAnimation") {
         launch {
             settings.primaryToy.collect { toyValue ->
                 currentPrimaryToy = PrimaryToy.fromInt(toyValue)
-                updateCurrentFrameRenderer()
                 currentFrameRenderer.initialize(this@ToyAnimationService)
             }
         }
@@ -139,6 +146,12 @@ class ToyAnimationService : GlyphMatrixService("ToyAnimation") {
             settings.audioVisualizerEnabled.collect { enabled ->
                 audioVisualizerEnabled = enabled
                 audioVisualizerRenderer.setEnabled(enabled)
+            }
+        }
+        launch { settings.mediaScrollEnabled.collect {
+            mediaScrollEnabled = it
+            if (!mediaScrollEnabled && isScrollingMediaInfo)
+                clearScrollingText()
             }
         }
         launch {
@@ -151,43 +164,63 @@ class ToyAnimationService : GlyphMatrixService("ToyAnimation") {
         launch { settings.notificationScrollEnabled.collect {
             notificationScrollEnabled = it
             if (!it)
-                notificationTextScrollRenderer.clear()
+                textScrollRenderer.clear()
             }
         }
         launch { settings.notificationBodyEnabled.collect { notificationBodyEnabled = it } }
         launch { settings.notificationScrollCooldown.collect { notificationScrollCooldown = it } }
+        launch {
+            NotificationListener.songInfoFlow.collect {
+                if (!mediaScrollEnabled) return@collect
+                if (NotificationListener.mediaPlaybackStateFlow.value == PlaybackState.STATE_PLAYING) {
+                    isScrollingMediaInfo = true
+                    textScrollRenderer.tryStartScroll(it, { isScrollingMediaInfo = false })
+                }
+            }
+        }
+        launch {
+            NotificationListener.mediaPlaybackStateFlow.collect {
+                if (!mediaScrollEnabled) return@collect
+                if (it == PlaybackState.STATE_PLAYING) {
+                    isScrollingMediaInfo = true
+                    textScrollRenderer.tryStartScroll(
+                        NotificationListener.songInfoFlow.value,
+                        { isScrollingMediaInfo = false })
+                }
+                else if (it == PlaybackState.STATE_PAUSED && isScrollingMediaInfo) {
+                    clearScrollingText()
+                }
+            }
+        }
     }
 
     private suspend fun CoroutineScope.runAnimationLoop(gmm: GlyphMatrixManager) {
         Log.i(LOG_TAG, "Starting animation loop")
         while (isActive) {
             val currentTimeMillis = System.currentTimeMillis()
-            updateCurrentFrameRenderer()
-
-            // Determine active renderer based on priority
-            var activeRenderer = currentFrameRenderer
+            currentFrameRenderer = getPrimaryFrameRenderer()
 
             // Audio priority
             val audioPresent = audioVisualizerRenderer.canPlay()
 
             if (audioVisualizerEnabled && (audioPresent || currentTimeMillis - lastAudioTime < AUDIO_COOLDOWN_TIME)) {
                 if (audioPresent) lastAudioTime = currentTimeMillis
-                activeRenderer = audioVisualizerRenderer
+                currentFrameRenderer = audioVisualizerRenderer
             }
             if (audioPresent)
                 lastAudioTime = System.currentTimeMillis()
 
             // Notification priority
             handleNotifications(currentTimeMillis)
-            if (notificationTextScrollRenderer.canPlay()) {
-                activeRenderer = notificationTextScrollRenderer
+            if (textScrollRenderer.canPlay()) {
+                currentFrameRenderer = textScrollRenderer
             }
 
             // Render Frame
             val modifier = if (notificationRingEnabled && lastNotificationCount > 0) getNotificationFrame() else null
             
             try {
-                val frameData = activeRenderer.getFrameData(modifier).build(applicationContext).render()
+                val frameData = currentFrameRenderer.getFrameData(modifier).build(applicationContext).render()
                 uiScope.launch {
                     gmm.setMatrixFrame(frameData)
                 }
@@ -195,7 +228,7 @@ class ToyAnimationService : GlyphMatrixService("ToyAnimation") {
                 Log.e(LOG_TAG, "Error rendering frame", e)
             }
 
-            delay(activeRenderer.getFrameTime())
+            delay(currentFrameRenderer.getFrameTime())
         }
     }
 
@@ -208,18 +241,26 @@ class ToyAnimationService : GlyphMatrixService("ToyAnimation") {
         if (notificationScrollEnabled) {
             if (isNew || (notificationScrollCooldown > 0 && isNotificationScrollOffCooldown(currentTimeMillis) && currentCount > 0)) {
                 val str = NotificationListener.mostRecentNotificationString(notificationBodyEnabled)
-                if (str != null)
-                    notificationTextScrollRenderer.tryStartScroll(str, {
-                        lastNotificationScrollFinishTime = System.currentTimeMillis() })
+                if (str != null) {
+                    isScrollingMediaInfo = false
+                    textScrollRenderer.tryStartScroll(str, {
+                        lastNotificationScrollFinishTime = System.currentTimeMillis()
+                    })
+                }
             } else if (wasRemoved) {
-                notificationTextScrollRenderer.clear()
+                clearScrollingText()
             }
         }
     }
 
+    private fun clearScrollingText() {
+        isScrollingMediaInfo = false
+        textScrollRenderer.clear()
+    }
+
     private fun isNotificationScrollOffCooldown(currentTimeMillis: Long): Boolean {
         return  notificationScrollCooldown > 0 &&
-                !notificationTextScrollRenderer.canPlay() &&
+                !textScrollRenderer.canPlay() &&
                 currentTimeMillis - lastNotificationScrollFinishTime > notificationScrollCooldown * 1000
     }
 
@@ -258,8 +299,8 @@ class ToyAnimationService : GlyphMatrixService("ToyAnimation") {
         uiScope.cancel()
     }
 
-    private fun updateCurrentFrameRenderer() {
-        currentFrameRenderer = when (currentPrimaryToy) {
+    private fun getPrimaryFrameRenderer(): IFrameRenderer {
+        return when (currentPrimaryToy) {
             PrimaryToy.Clock -> clockRenderer
             PrimaryToy.GameOfLife -> gameOfLifeRenderer
             else -> clockRenderer

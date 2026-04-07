@@ -1,4 +1,4 @@
-package com.kiko.adaptableglyphtoy.demos.animation
+package com.kiko.adaptableglyphtoy.animation
 
 import java.lang.Character.toLowerCase
 import java.time.LocalDateTime
@@ -123,6 +123,7 @@ object GlyphMatrixUtils {
             .replace('č', 'c', true)
             .replace('ď', 'd', true)
             .replace('é', 'e', true)
+            .replace('ě', 'e', true)
             .replace('í', 'i', true)
             .replace('ľ', 'l', true)
             .replace('ĺ', 'l', true)
@@ -130,6 +131,7 @@ object GlyphMatrixUtils {
             .replace('ó', 'o', true)
             .replace('ô', 'o', true)
             .replace('ŕ', 'r', true)
+            .replace('ř', 'r', true)
             .replace('š', 's', true)
             .replace('ť', 't', true)
             .replace('ú', 'u', true)

@@ -48,17 +48,17 @@ import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
-import com.kiko.adaptableglyphtoy.demos.animation.ToyAnimationService
-import com.kiko.adaptableglyphtoy.demos.animation.NotificationItem
-import com.kiko.adaptableglyphtoy.demos.animation.NotificationListener
-import com.kiko.adaptableglyphtoy.demos.animation.SettingsConstants.AUDIO_VISUALIZER_ENABLED_SETTING_KEY
-import com.kiko.adaptableglyphtoy.demos.animation.SettingsConstants.AUDIO_VISUALIZER_ROTATION_SETTING_KEY
-import com.kiko.adaptableglyphtoy.demos.animation.SettingsConstants.NOTIFICATION_SCROLL_INCLUDE_BODY_SETTING_KEY
-import com.kiko.adaptableglyphtoy.demos.animation.SettingsConstants.NOTIFICATION_SCROLL_REPEAT_TIME_SETTING_KEY
-import com.kiko.adaptableglyphtoy.demos.animation.SettingsConstants.PRIMARY_TOY_SETTING_KEY
-import com.kiko.adaptableglyphtoy.demos.animation.SettingsConstants.SETTINGS_PREFERENCES_NAME
-import com.kiko.adaptableglyphtoy.demos.animation.SettingsConstants.SHOW_NOTIFICATION_RING_SETTING_KEY
-import com.kiko.adaptableglyphtoy.demos.animation.SettingsConstants.SHOW_NOTIFICATION_SCROLL_SETTING_KEY
+import com.kiko.adaptableglyphtoy.animation.NotificationItem
+import com.kiko.adaptableglyphtoy.animation.NotificationListener
+import com.kiko.adaptableglyphtoy.animation.SettingsConstants.AUDIO_VISUALIZER_ENABLED_SETTING_KEY
+import com.kiko.adaptableglyphtoy.animation.SettingsConstants.AUDIO_VISUALIZER_ROTATION_SETTING_KEY
+import com.kiko.adaptableglyphtoy.animation.SettingsConstants.NOTIFICATION_SCROLL_INCLUDE_BODY_SETTING_KEY
+import com.kiko.adaptableglyphtoy.animation.SettingsConstants.NOTIFICATION_SCROLL_REPEAT_TIME_SETTING_KEY
+import com.kiko.adaptableglyphtoy.animation.SettingsConstants.PRIMARY_TOY_SETTING_KEY
+import com.kiko.adaptableglyphtoy.animation.SettingsConstants.SETTINGS_PREFERENCES_NAME
+import com.kiko.adaptableglyphtoy.animation.SettingsConstants.SHOW_MEDIA_SCROLL_SETTING_KEY
+import com.kiko.adaptableglyphtoy.animation.SettingsConstants.SHOW_NOTIFICATION_RING_SETTING_KEY
+import com.kiko.adaptableglyphtoy.animation.SettingsConstants.SHOW_NOTIFICATION_SCROLL_SETTING_KEY
 import com.kiko.adaptableglyphtoy.ui.theme.NothingAndroidSDKDemoTheme
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlin.math.roundToInt
@@ -191,6 +191,22 @@ class MainActivity : ComponentActivity() {
                                 Text(text = "Enabled permission", style = MaterialTheme.typography.bodyLarge)
                             }
                         }
+                        val notifPermGranted by notificationPermissionsGranted.collectAsState()
+                        if (notifPermGranted) {
+                            SwitchSetting(
+                                "Show Active Media Scrolling Text",
+                                SHOW_MEDIA_SCROLL_SETTING_KEY,
+                                ::onBooleanValueChanged
+                            )
+
+                        }
+                        else {
+                            Button(onClick = {
+                                requestNotificationAccess(this@MainActivity)
+                            }) {
+                                Text(text = "Enabled permission for app in settings", style = MaterialTheme.typography.bodyLarge)
+                            }
+                        }
 
                         Spacer(modifier = Modifier.height(16.dp))
 
@@ -200,7 +216,6 @@ class MainActivity : ComponentActivity() {
                         )
 
 
-                        val notifPermGranted by notificationPermissionsGranted.collectAsState()
                         if (notifPermGranted) {
                             val notifications by NotificationListener.notifications.collectAsState()
                             Text(
@@ -216,7 +231,7 @@ class MainActivity : ComponentActivity() {
 
                             var showNotificationScroll by remember { mutableStateOf(sharedPreferences.getBoolean(SHOW_NOTIFICATION_SCROLL_SETTING_KEY, false)) }
                             SwitchSetting(
-                                "Show Scrolling Notification",
+                                "Show Scrolling Notification Text",
                                 SHOW_NOTIFICATION_SCROLL_SETTING_KEY,
                             ) { newValue, key ->
                                 showNotificationScroll = newValue
@@ -225,12 +240,6 @@ class MainActivity : ComponentActivity() {
 
                             AnimatedVisibility(showNotificationScroll) {
                                 Column {
-                                    SwitchSetting(
-                                        "Include Notification Body in Scrolling Notification",
-                                        NOTIFICATION_SCROLL_INCLUDE_BODY_SETTING_KEY,
-                                        ::onBooleanValueChanged
-                                    )
-
                                     Spacer(modifier = Modifier.height(16.dp))
                                     var sliderValue by remember {
                                         mutableFloatStateOf(
@@ -259,6 +268,13 @@ class MainActivity : ComponentActivity() {
                                         modifier = Modifier.padding(32.dp, 0.dp)
                                     )
 
+                                    SwitchSetting(
+                                        "Include Notification Body in Scrolling Notification",
+                                        NOTIFICATION_SCROLL_INCLUDE_BODY_SETTING_KEY,
+                                        ::onBooleanValueChanged
+                                    )
+
+                                    Spacer(modifier = Modifier.height(32.dp))
                                     /*LazyColumn {
                                         items(notifications) { notif ->
                                             NotificationRow(notif)

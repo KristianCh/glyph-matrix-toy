@@ -1,14 +1,14 @@
-package com.kiko.adaptableglyphtoy.demos.animation.renderers
+package com.kiko.adaptableglyphtoy.animation.renderers
 
 import android.content.Context
-import com.kiko.adaptableglyphtoy.demos.animation.ArrayModifierApplyMode
-import com.kiko.adaptableglyphtoy.demos.animation.GlyphMatrixUtils.BOTTOM_LINE
-import com.kiko.adaptableglyphtoy.demos.animation.GlyphMatrixUtils.HEIGHT
-import com.kiko.adaptableglyphtoy.demos.animation.GlyphMatrixUtils.TOP_LINE
-import com.kiko.adaptableglyphtoy.demos.animation.GlyphMatrixUtils.WIDTH
-import com.kiko.adaptableglyphtoy.demos.animation.GlyphMatrixUtils.applyModifierToArray
-import com.kiko.adaptableglyphtoy.demos.animation.GlyphMatrixUtils.drawLine
-import com.kiko.adaptableglyphtoy.demos.animation.GlyphMatrixUtils.getCenteredTextX
+import com.kiko.adaptableglyphtoy.animation.ArrayModifierApplyMode
+import com.kiko.adaptableglyphtoy.animation.GlyphMatrixUtils.BOTTOM_LINE
+import com.kiko.adaptableglyphtoy.animation.GlyphMatrixUtils.HEIGHT
+import com.kiko.adaptableglyphtoy.animation.GlyphMatrixUtils.TOP_LINE
+import com.kiko.adaptableglyphtoy.animation.GlyphMatrixUtils.WIDTH
+import com.kiko.adaptableglyphtoy.animation.GlyphMatrixUtils.applyModifierToArray
+import com.kiko.adaptableglyphtoy.animation.GlyphMatrixUtils.drawLine
+import com.kiko.adaptableglyphtoy.animation.GlyphMatrixUtils.getCenteredTextX
 import com.nothing.ketchum.GlyphMatrixFrame
 import com.nothing.ketchum.GlyphMatrixObject
 import java.lang.Math.toRadians

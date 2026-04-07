@@ -36,7 +36,7 @@
         </activity> <!-- Animation Demo Service -->
 
         <service
-            android:name=".demos.animation.ToyAnimationService"
+            android:name=".animation.ToyAnimationService"
             android:exported="true"
             tools:ignore="ExportedService">
             <intent-filter>
@@ -58,7 +58,7 @@
         </service>
 
         <service
-            android:name=".demos.animation.NotificationListener"
+            android:name=".animation.NotificationListener"
             android:exported="false"
             android:label="Notification Listener"
             android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">

@@ -1,4 +1,4 @@
-package com.kiko.adaptableglyphtoy.demos.animation.renderers
+package com.kiko.adaptableglyphtoy.animation.renderers
 
 import android.content.Context
 import com.nothing.ketchum.GlyphMatrixFrame

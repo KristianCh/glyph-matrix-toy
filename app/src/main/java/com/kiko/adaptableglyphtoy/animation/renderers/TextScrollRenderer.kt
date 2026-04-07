@@ -1,13 +1,13 @@
-package com.kiko.adaptableglyphtoy.demos.animation.renderers
+package com.kiko.adaptableglyphtoy.animation.renderers
 
 import android.content.Context
 import android.util.Log
 import com.nothing.ketchum.GlyphMatrixFrame
 import com.nothing.ketchum.GlyphMatrixObject
-import com.kiko.adaptableglyphtoy.demos.animation.GlyphMatrixUtils.MID_LINE
-import com.kiko.adaptableglyphtoy.demos.animation.GlyphMatrixUtils.WIDTH
-import com.kiko.adaptableglyphtoy.demos.animation.GlyphMatrixUtils.getMappedText
-import com.kiko.adaptableglyphtoy.demos.animation.GlyphMatrixUtils.getTextLength
+import com.kiko.adaptableglyphtoy.animation.GlyphMatrixUtils.MID_LINE
+import com.kiko.adaptableglyphtoy.animation.GlyphMatrixUtils.WIDTH
+import com.kiko.adaptableglyphtoy.animation.GlyphMatrixUtils.getMappedText
+import com.kiko.adaptableglyphtoy.animation.GlyphMatrixUtils.getTextLength
 
 class TextScrollRenderer : IFrameRenderer {
     companion object {
@@ -55,7 +55,9 @@ class TextScrollRenderer : IFrameRenderer {
         return currentDisplayText != null
     }
 
-    override fun interact() { }
+    override fun interact() {
+        textPosition = -textLength
+    }
 
     fun tryStartScroll(string: String, onFinished: () -> Unit): Boolean {
         Log.i("TextScrollRenderer", "Try start scroll")
