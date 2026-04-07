@@ -158,7 +158,7 @@ class MainActivity : ComponentActivity() {
                         Text("Primary Toy", style = MaterialTheme.typography.titleMedium)
                         PrimaryToySelectRadioButton()
                         Text(
-                            "Audio Visualizer Settings",
+                            "Playing Media Settings",
                             style = MaterialTheme.typography.titleMedium
                         )
                         val audioPermGranted by audioPermissionsGranted.collectAsState()
@@ -215,14 +215,7 @@ class MainActivity : ComponentActivity() {
                             style = MaterialTheme.typography.titleMedium
                         )
 
-
                         if (notifPermGranted) {
-                            val notifications by NotificationListener.notifications.collectAsState()
-                            Text(
-                                text = "    Currently active notifications: ${notifications.size}",
-                                style = MaterialTheme.typography.bodyLarge
-                            )
-
                             SwitchSetting(
                                 "Show Notification Ring",
                                 SHOW_NOTIFICATION_RING_SETTING_KEY,
@@ -275,11 +268,6 @@ class MainActivity : ComponentActivity() {
                                     )
 
                                     Spacer(modifier = Modifier.height(32.dp))
-                                    /*LazyColumn {
-                                        items(notifications) { notif ->
-                                            NotificationRow(notif)
-                                        }
-                                    }*/
                                 }
                             }
                         }
@@ -293,17 +281,6 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
-        }
-    }
-
-    @Composable
-    fun NotificationRow(item: NotificationItem?) {
-        if (item == null) return
-        Column(modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp)) {
-            Text(text = item.title ?: "", style = MaterialTheme.typography.bodyLarge)
-            Text(text = item.text ?: "", style = MaterialTheme.typography.bodyMedium)
         }
     }
 
