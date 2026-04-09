@@ -8,6 +8,7 @@ import com.kiko.adaptableglyphtoy.animation.GlyphMatrixUtils.MID_LINE
 import com.kiko.adaptableglyphtoy.animation.GlyphMatrixUtils.WIDTH
 import com.kiko.adaptableglyphtoy.animation.GlyphMatrixUtils.getMappedText
 import com.kiko.adaptableglyphtoy.animation.GlyphMatrixUtils.getTextLength
+import com.kiko.adaptableglyphtoy.animation.ToyAnimationService
 
 class TextScrollRenderer : IFrameRenderer {
     companion object {
@@ -19,7 +20,7 @@ class TextScrollRenderer : IFrameRenderer {
     private var textPosition = BASE_POSITION
     private var textLength = 0
 
-    override fun initialize(context: Context) {}
+    override fun initialize(context: ToyAnimationService) {}
 
     override fun dispose() {
         clear()

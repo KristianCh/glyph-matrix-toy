@@ -16,6 +16,7 @@ import com.kiko.adaptableglyphtoy.animation.GlyphMatrixUtils.applyModifierToArra
 import com.kiko.adaptableglyphtoy.animation.GlyphMatrixUtils.batteryFrame
 import com.kiko.adaptableglyphtoy.animation.GlyphMatrixUtils.formatTime
 import com.kiko.adaptableglyphtoy.animation.GlyphMatrixUtils.getCenteredTextX
+import com.kiko.adaptableglyphtoy.animation.ToyAnimationService
 import com.kiko.adaptableglyphtoy.animation.ToyAnimationService.Companion.batteryManager
 import com.nothing.ketchum.GlyphMatrixFrame
 import com.nothing.ketchum.GlyphMatrixObject
@@ -33,7 +34,7 @@ class BatteryInfoRenderer: IFrameRenderer {
         }
     }
 
-    override fun initialize(context: Context) {
+    override fun initialize(context: ToyAnimationService) {
         this.context = context
         val intentFilter = IntentFilter(Intent.ACTION_BATTERY_CHANGED)
         val stickyIntent = context.registerReceiver(batteryReceiver, intentFilter)

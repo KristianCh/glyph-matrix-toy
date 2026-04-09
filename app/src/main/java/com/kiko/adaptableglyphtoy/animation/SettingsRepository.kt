@@ -6,6 +6,7 @@ import androidx.core.content.edit
 import com.kiko.adaptableglyphtoy.animation.SettingsConstants.AUDIO_VISUALIZER_ENABLED_SETTING_KEY
 import com.kiko.adaptableglyphtoy.animation.SettingsConstants.AUDIO_VISUALIZER_ROTATION_SETTING_KEY
 import com.kiko.adaptableglyphtoy.animation.SettingsConstants.BATTERY_DISPLAY_ENABLED_SETTING_KEY
+import com.kiko.adaptableglyphtoy.animation.SettingsConstants.CLOCK_FACE_SETTING_KEY
 import com.kiko.adaptableglyphtoy.animation.SettingsConstants.NOTIFICATION_SCROLL_INCLUDE_BODY_SETTING_KEY
 import com.kiko.adaptableglyphtoy.animation.SettingsConstants.NOTIFICATION_SCROLL_REPEAT_TIME_SETTING_KEY
 import com.kiko.adaptableglyphtoy.animation.SettingsConstants.PRIMARY_TOY_SETTING_KEY
@@ -69,6 +70,10 @@ class SettingsRepository(context: Context) {
         sharedPreferences.getBoolean(k, d)
     }
 
+    val clockFace: Flow<Int> = preferenceFlow(CLOCK_FACE_SETTING_KEY, 0) { k, d ->
+        sharedPreferences.getInt(k, d)
+    }
+
     fun setPrimaryToy(toy: Int) = sharedPreferences.edit { putInt(PRIMARY_TOY_SETTING_KEY, toy) }
     fun setAudioVisualizerEnabled(enabled: Boolean) = sharedPreferences.edit { putBoolean(AUDIO_VISUALIZER_ENABLED_SETTING_KEY, enabled) }
     fun setAudioVisualizerRotationType(type: Int) = sharedPreferences.edit { putInt(AUDIO_VISUALIZER_ROTATION_SETTING_KEY, type) }
@@ -78,6 +83,8 @@ class SettingsRepository(context: Context) {
     fun setNotificationBodyEnabled(enabled: Boolean) = sharedPreferences.edit { putBoolean(NOTIFICATION_SCROLL_INCLUDE_BODY_SETTING_KEY, enabled) }
     fun setNotificationScrollCooldown(seconds: Int) = sharedPreferences.edit { putInt(NOTIFICATION_SCROLL_REPEAT_TIME_SETTING_KEY, seconds) }
     fun setBatteryDisplayEnabled(enabled: Boolean) = sharedPreferences.edit { putBoolean(BATTERY_DISPLAY_ENABLED_SETTING_KEY, enabled) }
+    fun setClockFace(face: Int) = sharedPreferences.edit { putInt(CLOCK_FACE_SETTING_KEY, face) }
+
 
     // Sync methods for non-flow access if needed
     fun getPrimaryToy() = sharedPreferences.getInt(PRIMARY_TOY_SETTING_KEY, 0)
@@ -89,4 +96,5 @@ class SettingsRepository(context: Context) {
     fun isNotificationBodyEnabled() = sharedPreferences.getBoolean(NOTIFICATION_SCROLL_INCLUDE_BODY_SETTING_KEY, false)
     fun getNotificationScrollCooldown() = sharedPreferences.getInt(NOTIFICATION_SCROLL_REPEAT_TIME_SETTING_KEY, 0)
     fun getBatteryDisplayEnabled() = sharedPreferences.getBoolean (BATTERY_DISPLAY_ENABLED_SETTING_KEY, true)
+    fun getClockFace() = sharedPreferences.getInt(CLOCK_FACE_SETTING_KEY, 0)
 }

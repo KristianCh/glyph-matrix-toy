@@ -11,4 +11,6 @@ object SettingsConstants {
     const val NOTIFICATION_SCROLL_REPEAT_TIME_SETTING_KEY = "NotificationScrollRepeatTime"
     const val PRIMARY_TOY_SETTING_KEY = "PrimaryToy"
     const val BATTERY_DISPLAY_ENABLED_SETTING_KEY = "BatteryDisplayEnabled"
+    const val CLOCK_FACE_SETTING_KEY = "ClockFace"
+
 }

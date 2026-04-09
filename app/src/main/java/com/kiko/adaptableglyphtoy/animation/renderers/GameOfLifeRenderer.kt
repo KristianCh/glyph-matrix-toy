@@ -7,6 +7,7 @@ import com.kiko.adaptableglyphtoy.animation.GlyphMatrixUtils.MAX_BRIGHTNESS
 import com.kiko.adaptableglyphtoy.animation.GlyphMatrixUtils.WIDTH
 import com.kiko.adaptableglyphtoy.animation.GlyphMatrixUtils.applyModifierToArray
 import com.kiko.adaptableglyphtoy.animation.GlyphMatrixUtils.crossFrame
+import com.kiko.adaptableglyphtoy.animation.ToyAnimationService
 import com.nothing.ketchum.GlyphMatrixFrame
 import kotlin.collections.toIntArray
 import kotlin.random.Random
@@ -18,7 +19,7 @@ class GameOfLifeRenderer: IFrameRenderer {
     var noChangeFrames = 0
     var failed = false
 
-    override fun initialize(context: Context) {
+    override fun initialize(context: ToyAnimationService) {
         initializeInternal()
     }
 

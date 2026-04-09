@@ -38,7 +38,7 @@ class AudioVisualizerRenderer: IFrameRenderer {
     private var audioPresent = false
     private var captureRate = 100
 
-    override fun initialize(context: Context) {
+    override fun initialize(context: ToyAnimationService) {
         initializeVisualizer()
     }
 

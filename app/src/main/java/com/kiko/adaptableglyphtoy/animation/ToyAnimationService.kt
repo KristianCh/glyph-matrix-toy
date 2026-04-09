@@ -75,7 +75,7 @@ class ToyAnimationService : GlyphMatrixService("ToyAnimation") {
     private var notificationScrollEnabled = false
     private var notificationBodyEnabled = false
     private var notificationScrollCooldown = 0
-    private var batteryDisplayEnabled = true
+    private var batteryDisplayEnabled = false
 
     // Coordination state
     private var lastAudioTime: Long = System.currentTimeMillis()
