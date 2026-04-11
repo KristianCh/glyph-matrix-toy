@@ -61,6 +61,7 @@ import com.kiko.adaptableglyphtoy.animation.SettingsConstants.SHOW_MEDIA_SCROLL_
 import com.kiko.adaptableglyphtoy.animation.SettingsConstants.SHOW_NOTIFICATION_RING_SETTING_KEY
 import com.kiko.adaptableglyphtoy.animation.SettingsConstants.SHOW_NOTIFICATION_SCROLL_SETTING_KEY
 import com.kiko.adaptableglyphtoy.ui.theme.NothingAndroidSDKDemoTheme
+import com.kiko.adaptableglyphtoy.animation.ToyAnimationService
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlin.math.roundToInt
 
@@ -118,7 +119,7 @@ class MainActivity : ComponentActivity() {
         ActivityResultContracts.RequestPermission()
     ) { granted ->
         if (granted) {
-            startService(Intent(this, MainActivity::class.java))
+            startService(Intent(this, ToyAnimationService::class.java))
             audioPermissionsGranted.value = true
         } else {
             // Show explanation to user

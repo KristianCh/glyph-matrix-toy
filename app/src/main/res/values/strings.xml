@@ -3,4 +3,8 @@
 
     <string name="toy_name_animation">Glyph Matrix Adaptable Toy</string>
     <string name="toy_summary_animation">Configurable toy with various contextual functions.</string>
+    <string name="interact_toy">Interact with Toy</string>
+    <string name="cycle_toy">Cycle Primary Toy</string>
+    <string name="widget_name_interact">Interact Toy Widget</string>
+    <string name="widget_name_cycle">Cycle Toy Widget</string>
 </resources>
